@@ -6,7 +6,7 @@
 %     Nn_Type: 'e' or 'i'
 %     varargin: [n_E_HC,n_I_HC], if appicable
 % Output:
-%     Nn_X, Nn_Y: the spatial intex of the given neuron(s).
+%     Nn_X, Nn_Y: the spatial index of the given neuron(s).
 function [Nn_X,Nn_Y] = V1Field_Generation(N_HC,Nn_Ind,Nn_Type,varargin)
 
 % first get neuron spatial parameters
