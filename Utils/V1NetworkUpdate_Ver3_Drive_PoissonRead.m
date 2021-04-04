@@ -23,8 +23,8 @@ function [oRefTimeE,oVE,oSpE,oGE_ampa_R,oGE_nmda_R,oGE_gaba_R,... % Output
                           dt,p_EEFail,...
                           gL_E,Ve,S_Elgn,rhoE_ampa,rhoE_nmda,...
                           gL_I,Vi,S_Ilgn,rhoI_ampa,rhoI_nmda,...
-                          S_amb,lambda_E,lambda_I,rE_amb,rI_amb,...
-                          S_EL6,S_IL6,rE_L6,rI_L6) % L6 Parameters          % The lower/upper bounds for kick waiting time
+                          S_amb,SpE_lgn,SpI_lgn,SpE_amb,SpI_amb,...
+                          S_EL6,S_IL6,SpE_L6,SpI_L6) % L6 Parameters          % The lower/upper bounds for kick waiting time
 %% Firstly, refrectory neurons get out due to timer. NaN stand for neuron in ref in Vs
 RefTimeE(isnan(VE)) = RefTimeE(isnan(VE)) + dt; % timer for all ref neurons plus dt
 VE(RefTimeE>=tau_ref) = 0; % For ref time up, kick ref neurons out
@@ -51,20 +51,20 @@ oVI(oVI>=1) = nan; % nan represent refractory
 %%% NOTE!!: I use direct implementation of event generation now: generate
 %%% poission random numbers
 %p_Elgn = 1-exp(-dt*lambda_E); p_Ilgn = 1-exp(-dt*lambda_I); % Caution! lambda with unit ms^-1
-p_Elgn = dt*lambda_E; p_Ilgn = dt*lambda_I;
-%SpE_lgn = sparse(poissrnd(p_Elgn,size(VE))); SpI_lgn = sparse(poissrnd(p_Ilgn,size(VI)));
-SpE_lgn = sparse(double(rand(size(VE))<=p_Elgn)); SpI_lgn = sparse(double(rand(size(VI))<=p_Ilgn));
-% and Ambient
-%p_EAmb = 1-exp(-dt*rE_amb); p_IAmb = 1-exp(-dt*rI_amb); % Caution! r with unit ms^-1
-p_EAmb = dt*rE_amb; p_IAmb = dt*rI_amb;
-% SpE_amb = sparse(poissrnd(p_EAmb,size(VE))); SpI_amb = sparse(poissrnd(p_IAmb,size(VI)));
-SpE_amb = sparse(double(rand(size(VE))<=p_EAmb)); SpI_amb = sparse(double(rand(size(VI))<=p_IAmb));
-% L6
-p_EL6  = dt*rE_L6; p_IL6 = dt*rI_L6;
-% SpE_L6 = sparse(poissrnd(p_EL6,size(VE))); SpI_L6 = sparse(poissrnd(p_IL6,size(VI)));
-SpE_L6 = sparse(double(rand(size(VE))<=p_EL6)); SpI_L6 = sparse(double(rand(size(VI))<=p_IL6));
+% p_Elgn = dt*lambda_E; p_Ilgn = dt*lambda_I;
+% %SpE_lgn = sparse(poissrnd(p_Elgn,size(VE))); SpI_lgn = sparse(poissrnd(p_Ilgn,size(VI)));
+% SpE_lgn = sparse(double(rand(size(VE))<=p_Elgn)); SpI_lgn = sparse(double(rand(size(VI))<=p_Ilgn));
+% % and Ambient
+% %p_EAmb = 1-exp(-dt*rE_amb); p_IAmb = 1-exp(-dt*rI_amb); % Caution! r with unit ms^-1
+% p_EAmb = dt*rE_amb; p_IAmb = dt*rI_amb;
+% % SpE_amb = sparse(poissrnd(p_EAmb,size(VE))); SpI_amb = sparse(poissrnd(p_IAmb,size(VI)));
+% SpE_amb = sparse(double(rand(size(VE))<=p_EAmb)); SpI_amb = sparse(double(rand(size(VI))<=p_IAmb));
+% % L6
+% p_EL6  = dt*rE_L6; p_IL6 = dt*rI_L6;
+% % SpE_L6 = sparse(poissrnd(p_EL6,size(VE))); SpI_L6 = sparse(poissrnd(p_IL6,size(VI)));
+% SpE_L6 = sparse(double(rand(size(VE))<=p_EL6)); SpI_L6 = sparse(double(rand(size(VI))<=p_IL6));
 
-
+%% Instead, all input are already given now.
 %% E-to-E
 % Synaptic Failure
 RawEPSS = EEDlyRcd(:,1);%EPSS = e to e post synaptic spike effect
