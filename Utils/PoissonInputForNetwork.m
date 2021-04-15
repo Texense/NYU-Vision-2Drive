@@ -6,6 +6,7 @@
 % Output: eventsN: N*X Mat containing the series time for each neuron.
 %         EventTimeMat: N*timebins, entries are number of events of
 %         corresponding neuron in bin
+% single by default
 function EventTimeMat = PoissonInputForNetwork(N,lambda,T,dt)
 switch length(lambda)
     case 1

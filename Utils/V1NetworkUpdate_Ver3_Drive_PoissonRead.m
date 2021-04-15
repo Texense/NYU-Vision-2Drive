@@ -7,6 +7,8 @@
 
 % New Adding 04/02/2021
 % Read Poisson from existing event series, rather than generate every time.
+% Update 04/14/2021: Actually, let's precompute input series, and feed it
+% in. No more reading spike data.
 function [oRefTimeE,oVE,oSpE,oGE_ampa_R,oGE_nmda_R,oGE_gaba_R,... % Output
                              oGE_ampa_D,oGE_nmda_D,oGE_gaba_D,...
           oRefTimeI,oVI,oSpI,oGI_ampa_R,oGI_nmda_R,oGI_gaba_R,...
@@ -21,10 +23,9 @@ function [oRefTimeE,oVE,oSpE,oGE_ampa_R,oGE_nmda_R,oGE_gaba_R,... % Output
                           S_EE,S_EI,S_IE,S_II,...
                           tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,... % time unit is ms
                           dt,p_EEFail,...
-                          gL_E,Ve,S_Elgn,rhoE_ampa,rhoE_nmda,...
-                          gL_I,Vi,S_Ilgn,rhoI_ampa,rhoI_nmda,...
-                          S_amb,SpE_lgn,SpI_lgn,SpE_amb,SpI_amb,...
-                          S_EL6,S_IL6,SpE_L6,SpI_L6) % L6 Parameters          % The lower/upper bounds for kick waiting time
+                          gL_E,Ve,rhoE_ampa,rhoE_nmda,...
+                          gL_I,Vi,rhoI_ampa,rhoI_nmda,...
+                          EampaInp, IampaInp, EnmdaInp, InmdaInp) % L6 Parameters          % The lower/upper bounds for kick waiting time
 %% Firstly, refrectory neurons get out due to timer. NaN stand for neuron in ref in Vs
 RefTimeE(isnan(VE)) = RefTimeE(isnan(VE)) + dt; % timer for all ref neurons plus dt
 VE(RefTimeE>=tau_ref) = 0; % For ref time up, kick ref neurons out
@@ -33,7 +34,7 @@ oRefTimeE = RefTimeE; oRefTimeE(RefTimeE>=tau_ref) = 0; % Those times for kicked
 RefTimeI(isnan(VI)) = RefTimeI(isnan(VI)) + dt;
 VI(RefTimeI>=tau_ref) = 0;
 oRefTimeI = RefTimeI; oRefTimeI(RefTimeI>=tau_ref) = 0;
-%% output of V and spikes, based on existing Gs                         
+%% output of V and spikes, based on existing Gs                         + S_EL6 * SpE_L6 * rhoE_ampa        
 GE_I = 1/(tau_gaba_D-tau_gaba_R) * (GE_gaba_D - GE_gaba_R); % S_EI is included in amplitude of GE_gaba
 GE_E = 1/(tau_ampa_D-tau_ampa_R) * (GE_ampa_D - GE_ampa_R) + 1/(tau_nmda_D-tau_nmda_R) * (GE_nmda_D - GE_nmda_R); %                       
 oVE = VE + dt*(-gL_E*VE - GE_E.*(VE-Ve) - GE_I.*(VE-Vi));
@@ -78,15 +79,15 @@ GE_gaba_D_inter = GE_gaba_D + S_EI * (C_EI * SpI);
 GI_gaba_R_inter = GI_gaba_R + S_II * (C_II * SpI);  
 GI_gaba_D_inter = GI_gaba_D + S_II * (C_II * SpI);
 % ampa
-GE_ampa_R_inter = GE_ampa_R + S_Elgn * SpE_lgn + S_amb * SpE_amb + S_EE * EPSS * rhoE_ampa          + S_EL6 * SpE_L6 * rhoE_ampa;
-GE_ampa_D_inter = GE_ampa_D + S_Elgn * SpE_lgn + S_amb * SpE_amb + S_EE * EPSS * rhoE_ampa          + S_EL6 * SpE_L6 * rhoE_ampa;
-GI_ampa_R_inter = GI_ampa_R + S_Ilgn * SpI_lgn + S_amb * SpI_amb + S_IE * (C_IE * SpE) * rhoI_ampa  + S_IL6 * SpI_L6 * rhoI_ampa;
-GI_ampa_D_inter = GI_ampa_D + S_Ilgn * SpI_lgn + S_amb * SpI_amb + S_IE * (C_IE * SpE) * rhoI_ampa  + S_IL6 * SpI_L6 * rhoI_ampa;
+GE_ampa_R_inter = GE_ampa_R + full(S_EE * EPSS * rhoE_ampa)          + EampaInp; % Only Recurrent and Ext input now!
+GE_ampa_D_inter = GE_ampa_D + full(S_EE * EPSS * rhoE_ampa)          + EampaInp;
+GI_ampa_R_inter = GI_ampa_R + full(S_IE * (C_IE * SpE) * rhoI_ampa)  + IampaInp;
+GI_ampa_D_inter = GI_ampa_D + full(S_IE * (C_IE * SpE) * rhoI_ampa)  + IampaInp;
 % nmda
-GE_nmda_R_inter = GE_nmda_R + S_EE * EPSS * rhoE_nmda         + S_EL6 * SpE_L6 * rhoE_nmda;
-GE_nmda_D_inter = GE_nmda_D + S_EE * EPSS * rhoE_nmda         + S_EL6 * SpE_L6 * rhoE_nmda;
-GI_nmda_R_inter = GI_nmda_R + S_IE * (C_IE * SpE) * rhoI_nmda + S_IL6 * SpI_L6 * rhoI_nmda;
-GI_nmda_D_inter = GI_nmda_D + S_IE * (C_IE * SpE) * rhoI_nmda + S_IL6 * SpI_L6 * rhoI_nmda;
+GE_nmda_R_inter = GE_nmda_R + full(S_EE * EPSS * rhoE_nmda )        + EnmdaInp;
+GE_nmda_D_inter = GE_nmda_D + full(S_EE * EPSS * rhoE_nmda)         + EnmdaInp;
+GI_nmda_R_inter = GI_nmda_R + full(S_IE * (C_IE * SpE) * rhoI_nmda) + InmdaInp;
+GI_nmda_D_inter = GI_nmda_D + full(S_IE * (C_IE * SpE) * rhoI_nmda) + InmdaInp;
 
 % then exponetial decay
 % gaba
