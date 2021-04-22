@@ -9,16 +9,17 @@
 % Read Poisson from existing event series, rather than generate every time.
 % Update 04/14/2021: Actually, let's precompute input series, and feed it
 % in. No more reading spike data.
+% Update 04/21/2021: Now E-to-I also have delay
 function [oRefTimeE,oVE,oSpE,oGE_ampa_R,oGE_nmda_R,oGE_gaba_R,... % Output
                              oGE_ampa_D,oGE_nmda_D,oGE_gaba_D,...
           oRefTimeI,oVI,oSpI,oGI_ampa_R,oGI_nmda_R,oGI_gaba_R,...
                              oGI_ampa_D,oGI_nmda_D,oGI_gaba_D,...
-                             oEEDlyRcd] = ... % A updated N*T Mat recoding the time of kicks taking effect
+                             oEEDlyRcd,oIEDlyRcd] = ... % A updated N*T Mat recoding the time of kicks taking effect
           V1NetworkUpdate_Ver3_Drive_PoissonRead(RefTimeE,VE,SpE,GE_ampa_R,GE_nmda_R,GE_gaba_R,... % These are input kept updating
                                           GE_ampa_D,GE_nmda_D,GE_gaba_D,...
                           RefTimeI,VI,SpI,GI_ampa_R,GI_nmda_R,GI_gaba_R,...
                                           GI_ampa_D,GI_nmda_D,GI_gaba_D,...
-                                          EEDlyRcd,... % A N*T Mat recoding the time of kicks taking effect
+                                          EEDlyRcd,IEDlyRcd,... % A N*T Mat recoding the time of kicks taking effect
                           C_EE,C_EI,C_IE,C_II,...
                           S_EE,S_EI,S_IE,S_II,...
                           tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,... % time unit is ms
@@ -66,12 +67,13 @@ oVI(oVI>=1) = nan; % nan represent refractory
 % SpE_L6 = sparse(double(rand(size(VE))<=p_EL6)); SpI_L6 = sparse(double(rand(size(VI))<=p_IL6));
 
 %% Instead, all input are already given now.
-%% E-to-E
-% Synaptic Failure
-RawEPSS = EEDlyRcd(:,1);%EPSS = e to e post synaptic spike effect
-[nE1,nE2,Raw_NonZero]  = find(RawEPSS);
-SynFail = binornd(Raw_NonZero,1-p_EEFail);
-EPSS = sparse(nE1,nE2,SynFail,size(RawEPSS,1),size(RawEPSS,2));
+%% E-to-E has 1.Delay and 2.Synaptic Failure
+RawEPSS_E = EEDlyRcd(:,1);%EPSS = e to e post synaptic spike effect
+[nE1_E,nE2_E,Raw_NonZero_E]  = find(RawEPSS_E);
+SynFail_E = binornd(Raw_NonZero_E,1-p_EEFail);
+EPSS_E = sparse(nE1_E,nE2_E,SynFail_E,size(RawEPSS_E,1),size(RawEPSS_E,2));
+% E-to-I has 1.Delay 
+EPSS_I = IEDlyRcd(:,1);%EPSS = e to e post synaptic spike effect
 % first respond to spikes
 % gaba
 GE_gaba_R_inter = GE_gaba_R + S_EI * (C_EI * SpI);  
@@ -79,15 +81,15 @@ GE_gaba_D_inter = GE_gaba_D + S_EI * (C_EI * SpI);
 GI_gaba_R_inter = GI_gaba_R + S_II * (C_II * SpI);  
 GI_gaba_D_inter = GI_gaba_D + S_II * (C_II * SpI);
 % ampa
-GE_ampa_R_inter = GE_ampa_R + full(S_EE * EPSS * rhoE_ampa)          + EampaInp; % Only Recurrent and Ext input now!
-GE_ampa_D_inter = GE_ampa_D + full(S_EE * EPSS * rhoE_ampa)          + EampaInp;
-GI_ampa_R_inter = GI_ampa_R + full(S_IE * (C_IE * SpE) * rhoI_ampa)  + IampaInp;
-GI_ampa_D_inter = GI_ampa_D + full(S_IE * (C_IE * SpE) * rhoI_ampa)  + IampaInp;
+GE_ampa_R_inter = GE_ampa_R + full(S_EE * EPSS_E * rhoE_ampa) + EampaInp; % Only Recurrent and Ext input now!
+GE_ampa_D_inter = GE_ampa_D + full(S_EE * EPSS_E * rhoE_ampa) + EampaInp;
+GI_ampa_R_inter = GI_ampa_R + full(S_IE * EPSS_I * rhoI_ampa) + IampaInp;
+GI_ampa_D_inter = GI_ampa_D + full(S_IE * EPSS_I * rhoI_ampa) + IampaInp;
 % nmda
-GE_nmda_R_inter = GE_nmda_R + full(S_EE * EPSS * rhoE_nmda )        + EnmdaInp;
-GE_nmda_D_inter = GE_nmda_D + full(S_EE * EPSS * rhoE_nmda)         + EnmdaInp;
-GI_nmda_R_inter = GI_nmda_R + full(S_IE * (C_IE * SpE) * rhoI_nmda) + InmdaInp;
-GI_nmda_D_inter = GI_nmda_D + full(S_IE * (C_IE * SpE) * rhoI_nmda) + InmdaInp;
+GE_nmda_R_inter = GE_nmda_R + full(S_EE * EPSS_E * rhoE_nmda) + EnmdaInp;
+GE_nmda_D_inter = GE_nmda_D + full(S_EE * EPSS_E * rhoE_nmda) + EnmdaInp;
+GI_nmda_R_inter = GI_nmda_R + full(S_IE * EPSS_I * rhoI_nmda) + InmdaInp;
+GI_nmda_D_inter = GI_nmda_D + full(S_IE * EPSS_I * rhoI_nmda) + InmdaInp;
 
 % then exponetial decay
 % gaba
@@ -110,4 +112,8 @@ oGI_nmda_D = GI_nmda_D_inter * exp(-dt/tau_nmda_D);
 oEEDlyRcd = sparse(size(EEDlyRcd,1),size(EEDlyRcd,2));
 oEEDlyRcd(:,1:end-1) = EEDlyRcd(:,2:end); % first, move all kicks one-dt forward
 oEEDlyRcd(:,end) = C_EE * oSpE; % put the new generated kicks to the last column
+oIEDlyRcd = sparse(size(IEDlyRcd,1),size(IEDlyRcd,2));
+oIEDlyRcd(:,1:end-1) = IEDlyRcd(:,2:end); % first, move all kicks one-dt forward
+oIEDlyRcd(:,end) = C_IE * oSpE;
+
 end

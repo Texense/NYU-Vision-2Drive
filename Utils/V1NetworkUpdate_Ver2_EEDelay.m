@@ -23,7 +23,7 @@ function [oRefTimeE,oVE,oSpE,oGE_ampa_R,oGE_nmda_R,oGE_gaba_R,... % Output
                           S_amb,lambda_E,lambda_I,rE_amb,rI_amb,...
                           S_EL6,S_IL6,rE_L6,rI_L6) % L6 Parameters          % The lower/upper bounds for kick waiting time
 %% Firstly, refrectory neurons get out due to timer. NaN stand for neuron in ref in Vs
-RefTimeE(isnan(VE)) = RefTimeE(isnan(VE)) + dt; % timer for all ref neurons plus dt
+RefTimeE(isnan(VE)) = RefTimeE(isnan(VE)) + dt; % timer for all ref neurons plus dta
 VE(RefTimeE>=tau_ref) = 0; % For ref time up, kick ref neurons out
 oRefTimeE = RefTimeE; oRefTimeE(RefTimeE>=tau_ref) = 0; % Those times for kicked-out neurons also reset
 % same for I neurons
