@@ -83,7 +83,7 @@ N_EE = mean(sum(C_EE,2)); N_EI = mean(sum(C_EI,2));
 N_IE = mean(sum(C_IE,2)); N_II = mean(sum(C_II,2));
 % initialize with a reasonable guess     
 mVE = 0.57; mVI = 0.67; 
-bE = 0.015; bI = 0.015; % Guess an b value...
+bE = 0.02; bI = 0.02; % Guess an b value...
 %mVE =  0.539; mVI = 0.683; 
 %mVE = 0.5; mVI = 0.5; 
 meanVs = [mVE;mVI];
