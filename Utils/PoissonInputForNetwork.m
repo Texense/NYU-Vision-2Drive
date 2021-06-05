@@ -27,7 +27,7 @@ for NeuInd = 1:N
 end
 
 [A,~,Times] = find(eventsN);
-EventTimeMat = sparse(A,floor(Times/dt)+1,ones(size(A)),N,floor(T/dt)+1);
+EventTimeMat = full(sparse(A,floor(Times/dt)+1,ones(size(A)),N,floor(T/dt)+1));
 
 
 end
