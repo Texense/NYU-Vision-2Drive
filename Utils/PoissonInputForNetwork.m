@@ -1,7 +1,7 @@
 %% Generale REAL Poisson processes for each cell;
 % Input: N: Number of Neurons
 %        lambda: Rates of Poisson; Can be N*1 vec or 1 number
-%        T: Total time
+%        T: Total time (Unit: ms)
 
 % Output: eventsN: N*X Mat containing the series time for each neuron.
 %         EventTimeMat: N*timebins, entries are number of events of
