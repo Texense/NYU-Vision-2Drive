@@ -84,10 +84,10 @@ lambda_I_Pixel = lambda_I_drive;
 FrEIni = 16; FrIIni = 64;
 FrEPixIni = FrEIni *ones(PixNum,1);
 FrIPixIni = FrIIni *ones(PixNum,1);
-mVEPixIni = 0.7 *ones(PixNum,1);
+mVEPixVec = 0.7 *ones(PixNum,1);
 mVIPixVec = 0.8 *ones(PixNum,1);
-L4EInputIni = [C_EE_Pixel_Us*FrEPixIni*(1-p_EEFail);C_IE_Pixel_Us*FrEPixIni]/1e3;   
-L4IInputIni = [C_EI_Pixel_Us*FrIPixIni           ;  C_II_Pixel_Us*FrIPixIni]/1e3;   
+% L4EInputIni = [C_EE_Pixel_Us*FrEPixIni*(1-p_EEFail);C_IE_Pixel_Us*FrEPixIni]/1e3;   
+% L4IInputIni = [C_EI_Pixel_Us*FrIPixIni           ;  C_II_Pixel_Us*FrIPixIni]/1e3;   
 %% PreSet Input events to Pixel-LIF neurons
 LGNCurInp = 0; L6CurInp = 0;
 dt = 0.1; TimeFrac = 1e3/LIFSimuT;
@@ -106,34 +106,14 @@ toc
 %% Do the following iterations recursively
 for Epoch = 1:10
     tic
-    % Mats
-    MatEE = (S_EE*(1-p_EEFail))*C_EE_Pixel_Us; % Need Ref here??
-    MatEI = S_EI *              C_EI_Pixel_Us;
-    MatIE = S_IE *              C_IE_Pixel_Us.*(Ve-repmat(mVIPixVec,1,PixNum));
-    MatII = S_II *              C_II_Pixel_Us.*(Vi-repmat(mVIPixVec,1,PixNum));
-    ConnMat = [MatEE.*(Ve-repmat(mVEOnPixVec,1,PixNum))/2 , MatEE.*(Ve-repmat(mVEOnPixVec,1,PixNum))/2 , MatEI.*(Vi-repmat(mVEOnPixVec,1,PixNum));
-               MatEE.*(Ve-repmat(mVEOffPixVec,1,PixNum))/2, MatEE.*(Ve-repmat(mVEOffPixVec,1,PixNum))/2, MatEI.*(Vi-repmat(mVEOffPixVec,1,PixNum));
-               MatIE/2                                    , MatIE/2                                    , MatII];
-    % Leak On/Off
-    LeakEOn  = gL_E * (0-mVEOnPixVec)  * 1e3;
-    LeakEOff = gL_E * (0-mVEOffPixVec) * 1e3;
-    LeakI =    gL_I * (0-mVIPixVec)    * 1e3;
-    LeakV = [LeakEOn;LeakEOff;LeakI];
-    
-    % Ext
-    ExtEOn  = (lambda_EOn_Pixel*S_Elgn  + rE_amb*S_amb + L6E_Pixel*S_EL6).*(Ve-mVEOnPixVec ) * 1e3;
-    ExtEOff = (lambda_EOff_Pixel*S_Elgn + rE_amb*S_amb + L6E_Pixel*S_EL6).*(Ve-mVEOffPixVec) * 1e3;
-    ExtI =    (lambda_I_Pixel*S_Ilgn    + rI_amb*S_amb + L6I_Pixel*S_IL6).*(Ve-mVIPixVec)    * 1e3;
-    ExtV = [ExtEOn;ExtEOff;ExtI];
-    % Ref Vec
-    RefEOn = 1-FrEOnPixVec*tau_ref/1e3;
-    RefEOff = 1-FrEOffPixVec*tau_ref/1e3;
-    RefI = 1-FrIPixVec*tau_ref/1e3;
-    RefM = sparse(diag([RefEOn;RefEOff;RefI]));
-    
-    % MF Equations:
-    Fr_MFinv = (sparse(eye(3*PixNum))-RefM*ConnMat) \ (RefM * ( ExtV + LeakV));
-
+% PH for MF: Need variable modification
+    Fr_MFinv = MFgivV(S_EE,S_EI,S_IE,S_II,p_EEFail,...
+                     S_Elgn,S_Ilgn, rE_amb,rI_amb,S_amb, S_EL6,S_IL6, ...
+                     gL_E,gL_I, Ve,Vi,...    
+                     C_EE_Pixel_Us, C_EI_Pixel_Us, C_IE_Pixel_Us, C_II_Pixel_Us,...
+                     lambda_EOn_Pixel,lambda_EOff_Pixel,lambda_I_Pixel, L6E_Pixel, L6I_Pixel,...
+                     mVEOnPixVec, mVEOffPixVec, mVIPixVec, PixNum, ...
+                     FrEOnPixVec, FrEOffPixVec, FrIPixVec, tau_ref);
     
     if Epoch < 10
        [mVEOnPixNew,mVEOffPixNew,mVIPixNew] =  ...
@@ -176,6 +156,63 @@ for Epoch = 1:10
    caxis([0.74 0.83])
    drawnow
 end
+end
+
+%% MF Computing: giving mVs
+function [Fr_MFinv] = MFgivV(S_EE,S_EI,S_IE,S_II,p_EEFail,...
+                     S_Elgn,S_Ilgn, rE_amb,rI_amb,S_amb, S_EL6,S_IL6, ...
+                     gL_E,gL_I, Ve,Vi,...    
+                     C_EE_Pixel_Us, C_EI_Pixel_Us, C_IE_Pixel_Us, C_II_Pixel_Us,...
+                     lambda_EOn_Pixel,lambda_EOff_Pixel,lambda_I_Pixel, L6E_Pixel, L6I_Pixel,...
+                     mVEOnPixVec, mVEOffPixVec, mVIPixVec, PixNum, ...
+                     FrEOnPixVec, FrEOffPixVec, FrIPixVec, tau_ref,...
+                     FrPreUse, FrPreUseDim) % The last 2: Use preset Frs, and their entry location
+    % Mats
+    MatEE = (S_EE*(1-p_EEFail))*C_EE_Pixel_Us; % Need Ref here??
+    MatEI = S_EI *              C_EI_Pixel_Us;
+    MatIE = S_IE *              C_IE_Pixel_Us.*(Ve-repmat(mVIPixVec,1,PixNum));
+    MatII = S_II *              C_II_Pixel_Us.*(Vi-repmat(mVIPixVec,1,PixNum));
+    ConnMat = [MatEE.*(Ve-repmat(mVEOnPixVec,1,PixNum))/2 , MatEE.*(Ve-repmat(mVEOnPixVec,1,PixNum))/2 , MatEI.*(Vi-repmat(mVEOnPixVec,1,PixNum));
+               MatEE.*(Ve-repmat(mVEOffPixVec,1,PixNum))/2, MatEE.*(Ve-repmat(mVEOffPixVec,1,PixNum))/2, MatEI.*(Vi-repmat(mVEOffPixVec,1,PixNum));
+               MatIE/2                                    , MatIE/2                                    , MatII];
+    % Leak On/Off
+    LeakEOn  = gL_E * (0-mVEOnPixVec)  * 1e3;
+    LeakEOff = gL_E * (0-mVEOffPixVec) * 1e3;
+    LeakI =    gL_I * (0-mVIPixVec)    * 1e3;
+    LeakV = [LeakEOn;LeakEOff;LeakI];
+    
+    % Ext
+    ExtEOn  = (lambda_EOn_Pixel*S_Elgn  + rE_amb*S_amb + L6E_Pixel*S_EL6).*(Ve-mVEOnPixVec ) * 1e3;
+    ExtEOff = (lambda_EOff_Pixel*S_Elgn + rE_amb*S_amb + L6E_Pixel*S_EL6).*(Ve-mVEOffPixVec) * 1e3;
+    ExtI =    (lambda_I_Pixel*S_Ilgn    + rI_amb*S_amb + L6I_Pixel*S_IL6).*(Ve-mVIPixVec)    * 1e3;
+    ExtV = [ExtEOn;ExtEOff;ExtI];
+    % Ref Vec
+    RefEOn = 1-FrEOnPixVec*tau_ref/1e3;
+    RefEOff = 1-FrEOffPixVec*tau_ref/1e3;
+    RefI = 1-FrIPixVec*tau_ref/1e3;
+    RefM = sparse(diag([RefEOn;RefEOff;RefI]));
+    
+    % MF Equations:
+    if isempty(FrPreUse)
+    Fr_MFinv = (sparse(eye(3*PixNum))-RefM*ConnMat) \ (RefM * ( ExtV + LeakV));
+    else
+        FrPreVec = zeros(PixNum*3,1); FrPreVec(FrPreUseDim) = FrPreUse;
+        DimAll = 1:PixNum*3; FrminusDim = DimAll(~ismember(DimAll,FrPreUse));
+        FrPreReplace = RefM*ConnMat * FrPreVec; 
+        % Now compute in the subspace
+        FrPreMinus = FrPreReplace(FrminusDim);
+        RefMMinus  = RefM(FrminusDim, FrminusDim);
+        ConnMatMinus = ConnMat(FrminusDim, FrminusDim);
+        ExtVMinus = ExtV(FrminusDim);
+        LeakVMinus = LeakV(FrminusDim);
+        Fr_MFinvMinus = (sparse(eye(length(FrminusDim)))-RefMMinus*ConnMatMinus) \ ...
+                        (RefMMinus * ( ExtVMinus + LeakVMinus) + FrPreMinus);
+        % make up MF output            
+        Fr_MFinv = zeros(PixNum*3,1);   
+        Fr_MFinv(FrminusDim) = Fr_MFinvMinus; Fr_MFinv(FrPreUseDim) = FrPreUse; 
+    end
+
+
 end
 
 %% For each pixel, use 1E and 1I neurons to represent them
