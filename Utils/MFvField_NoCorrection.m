@@ -343,23 +343,26 @@ for tInd = 1:length(tt)-1
         mVI(:,vRecordNum) = nanmean(vRecord(PixNum+1:2*PixNum,:),2);
     end
     % Compute meanV
-%     if tInd > DroptInd
-%         if OnOffPhase(FrameInd) == 1
+     if tInd > DroptInd
+         if OnOffPhase(FrameInd) == 1
 %             VNanOnCount = VNanOnCount + isnan(ov);
 %             osv = ov; osv(isnan(osv)) = 0;
 %             sumVOn = sumVOn + osv;
-%         elseif OnOffPhase(FrameInd) == 0
+             FrEOnLIF = FrEOnLIF + SpNow(1:PixNum);
+         elseif OnOffPhase(FrameInd) == 0
 %       % sumV = sum([sumV,ov],2,'omitnan');
 %             VNanOffCount = VNanOffCount + isnan(ov);
 %             osv = ov; osv(isnan(osv)) = 0;
 %             sumVOff = sumVOff + osv;
-%         end
-%     end
+             FrEOffLIF = FrEOffLIF + SpNow(1:PixNum);   
+         end
+         FrILIF = FrILIF + SpNow(PixNum+1:2*PixNum);
+     end
     % Transfer variables
     vt = ov; 
 end
 mVOnLIF = sumVOn./((length(tt)-1 - DroptInd)/2 - VNanOnCount);
-mVOffLIF = sumVOff./((length(tt)-1 - DroptInd)/2 - VNanOnCount);
+mVOffLIF = sumVOff./((length(tt)-1 - DroptInd)/2 - VNanOffCount);
 mVEOnLIF = mVOnLIF(1:PixNum); mVEOffLIF = mVOffLIF(1:PixNum);
 mVILIF = (mVOnLIF(PixNum+1:2*PixNum) + mVOffLIF(PixNum+1:2*PixNum))/2;
 % fr = length(find(spike>(1-SampleProp)*T))/(T*SampleProp/1000);
