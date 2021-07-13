@@ -5,11 +5,11 @@
 % Output: InE/I: Adjusted initial conditions for E/I cells
 %         DlyMat: Delay Mats used 
 
-function [InE, InI] = LargeNW_LoadIniState(Inifile, N_E, N_I)
-if ~isstring(Inifile)
-   InSs = Inifile;
+function [InE, InI] = LargeNW_LoadIniState(InifileName, Inifile,N_E, N_I)
+if exist(InifileName) == 2
+InSs = load(InifileName);
 else
-InSs = load(Inifile);
+    InSs = Inifile;
 end
 if ~isfield(InSs,'VE') || ~isfield(InSs,'VI')
     disp('Not proper ini state file')
@@ -46,9 +46,5 @@ for FInd = 1:length(INames)
          InI.(INames{FInd}) = CurrentField(1:N_I);
      end
 end
-
-end
-
-function DlyRcd = MakeDlyRcd()
 
 end
