@@ -1,103 +1,84 @@
-%% mean-field stuff. We use parameters andto estimate firing rates
-%% NOTE! mean Vs are now autonomus from single cell simulations
-% Input: N_PreSynAll connectivity matrix 3*3 Post(R)/Pre(C): S, C, I
-%                                                          S
-%                                                          C
-%                                                          I
-%        N_PreSynPix Same as N_PreSynPix, but within the same pixel 
-%% ZC stopped here
-%        S_EE,S_EI,S_IE,S_II synaptic strength
-%        S_EL6,S_IL6,rE_L6,rI_L6 L6 Input
-%        p_EEFail            Synaptic failure prob
-%        lambda_E lambda_I   LGN input
-%        rE_amb rI_amb       Ambient input
-%        S_Elgn S_Ilgn S_amb Synaptic strength of drives
-%        gL_E,gL_I           Leaky time constants
-%        Ve,Vi               Reversak potentials
-%        mVE,mVI             Mean Vs, collected from simulationsave('fig9MLMC.mat',fig9MLMC
-%        varargin            >34: 'Mean' or 'Traj', indicate the form of the output
-%                            >35: Sample Number after stopping criteria
-%                            >36: Max Iteration before converged
-%                            >37: Stepsize h
-%                            >38: LIF simulation time
+%% MF+V for Pixels. E is divided into S and C cells
+%% Input: 
+%        N_PreSynPix   within Pixel->Pixel connectivity matrix 
+%                           3*3 Post(R)/Pre(C): S, C, I
+%                                                       S
+%                                                       C
+%                                                       I
+%        L4E, L4I                 Total E/I input kick numbers
+%        Assume L4SE/CE/IE are proportional to presynaptic neuron numbers
+%        S_EE,S_EI,S_IE,S_II      synaptic strength
+%        S_EL6,S_IL6,rE_L6,rI_L6, L6 Input, All Scalar
+%        S_amb,rE_amb,rI_amb      amb Input, All Scalar
+%        p_EEFail                 E-to-E Synaptic failure prob
+%        lgn_EOnOff,lgn_I         LGN input rate. Phase OnOff for E (2*1 vec) 
+%        S_Elgn S_Ilgn            LGN strength of drives
+%        NlgnS,NlgnC,NlgnI        LGN neuron # to SCI cells
+%        gL_E,gL_I                Leaky time constants
+%        Ve,Vi                    Reversal potentials
+%        HyperPara           Cell. Entries are simulation hyperparameters
+%                            1st: 'Mean' or 'Traj', indicate the form of the output
+%                            2nd: Sample Number after stopping criteria
+%                            3rd: Max Iteration before converged
+%                            4th: Stepsize h
+%                            5th: LIF simulation time
 % Output:f_EnI               Estimation of firing rates, E and I; A sequences
 %        meanVs              mean V of E and I
 %        loop                Number of loops
 %        SteadyIndicate      logical value for convergence
-
-% Ver 2.0: New convergence conditions!
-% Ver 3.0: We can now define 1. form of the output
-%                            2. Sample number and max iteration number
-%                            3. test different stepsizes and LIF simulation
-%                            time
-% Ver Test3.1: We try LSY's idea about using previous mV to stablize
-% Ver Test3.3: To compensate the overstimate: add ref to MF estimate
-% Ver 4:       L6 added
-% Ver 5:       For single pixels
+%% Ver 5:       For single pixels
 % iteration
-function [f_EnIOut,meanVs,loop,SteadyIndicate,FailureIndicate] = ...
-    MFpV_SinglePixel(N_PreSynAll, N_PreSynPix,... %2
-                                   S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
-                                   lambda_E,S_Elgn,rE_amb,S_amb,... %4
-                                   lambda_I,S_Ilgn,rI_amb,... %3
-                                   S_EL6,S_IL6,rE_L6,rI_L6,...%4 L6 added
-                                   tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,... %7
-                                   rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,... %4
-                                   gL_E,gL_I,Ve,Vi,... %4
-                                   N_HC,n_E_HC,n_I_HC,varargin) %3+x % if varagin non empty, we only export the last state
-                                   %This line: we are taking spatial center 
-
-if nargin > 35+4  % Specify: The number of loops I want, after stopping criteria met    
-    AveLoop = varargin{2};
+% Zhuo-Cheng Xiao 07/27/2021
+function [f_EnIOut,meanVs,loop,SteadyIndicate,FailureIndicate]...
+           = MFpV_SinglePixel(...
+...% MF Parameters                     
+                     N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,... %3 
+                     S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
+                     S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                     lgn_EOnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
+                     gL_E,gL_I,Ve,Vi, tau_ref,... %5
+...% Below are LIF details
+                     tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
+                     rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,... %4
+                     HyperPara) % if varagin non empty, we only export the last state
+%% Hyperparameters
+N_Hyp = length(HyperPara);
+if N_Hyp > 0  % Specify: The number of loops I want, after stopping criteria met    
+    AveLoop = HyperPara{2};
 else 
     AveLoop = 100;
 end
 
-if nargin > 36+4 % Specify: Maximum nubmer of loops before stopping
-        StopLoop = varargin{3};
+if N_Hyp > 1 % Specify: Maximum nubmer of loops before stopping
+        StopLoop = HyperPara{3};
 else 
         StopLoop = AveLoop;
 end
 
-if nargin > 37+4 % Specify: stepsize h
-    h_Step = varargin{4};
+if N_Hyp > 2 % Specify: stepsize h
+    h_Step = HyperPara{4};
 else
     h_Step = 1;        
 end
 
-if nargin > 38+4 % Specify: LIF simulation timef_pre
-    LIFSimuT = varargin{5};
+if N_Hyp > 3 % Specify: LIF simulation timef_pre
+    LIFSimuT = HyperPara{5};
 else
     LIFSimuT = 20*1e3;    % unit in ms    
 end
 
-N_SS,N_SC,N_SI,N_CS,N_CC,N_CI,N_IS,N_IC,N_II
-
-% Get connectivity for the center HC
-E_sideInd = floor(1*n_E_HC+1):2*n_E_HC;
-[E_Ind_X,E_Ind_Y] = meshgrid(E_sideInd,E_sideInd);
-E_Ind = (reshape(E_Ind_X,size(E_Ind_X,1)*size(E_Ind_X,2),1)-1)*n_E_HC*N_HC + reshape(E_Ind_Y,size(E_Ind_X,1)*size(E_Ind_X,2),1);
-
-I_sideInd = floor(1*n_I_HC+1):2*n_I_HC;
-[I_Ind_X,I_Ind_Y] = meshgrid(I_sideInd,I_sideInd);
-I_Ind = (reshape(I_Ind_X,size(I_Ind_X,1)*size(I_Ind_X,2),1)-1)*n_I_HC*N_HC + reshape(I_Ind_Y,size(I_Ind_X,1)*size(I_Ind_X,2),1);
-
-% Take averaged number of input neurons 
-% NOTE! Only picking up the middle part
-N_EE = mean(sum(C_EE(E_Ind,:),2)); N_EI = mean(sum(C_EI(E_Ind,:),2)); 
-N_IE = mean(sum(C_IE(I_Ind,:),2)); N_II = mean(sum(C_II(I_Ind,:),2));
 % initialize with a reasonable guess     
-mVE = 0.57; mVI = 0.67; 
-%mVE =  0.539; mVI = 0.683; 
-%mVE = 0.5; mVI = 0.5; 
-meanVs = [mVE;mVI];
-f_EnIIni = MeanFieldEst_BkGd_L6(N_EE,N_EI,N_IE,N_II,...
-                                   S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                   lambda_E,S_Elgn,rE_amb,S_amb,...
-                                   lambda_I,S_Ilgn,rI_amb,...
-                                   S_EL6,S_IL6,rE_L6,rI_L6,...
-                                   gL_E,gL_I,Ve,Vi,mVE,mVI);
-f_EnIOut = f_EnIIni;
+mVSOn = 0.67; mVSOff = 0.57; 
+mVCOn = 0.67; mVCOff = 0.57;
+mVI = 0.77; 
+f_pre = zeros(5,1);
+meanVs = [mVSOn;mVSOff;mVCOn;mVCOff;mVI];
+f_SCIIni = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+                       S_EE,S_EI,S_IE,S_II,p_EEFail,...
+                       S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                       lgn_EOnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
+                       gL_E,gL_I,Ve,Vi, tau_ref, meanVs, f_pre);
+f_EnIOut = f_SCIIni;
 
 loop = 0;
 SteadyCounter = 0; % Indicate the number of loops after steady condition
@@ -109,21 +90,21 @@ FailureIndicate = 0;
 Suspicious = false;
 while SteadyCounter<AveLoop %the formal ending condition
 % simulate one neuron with input                             
-[mVE,~] = MEanFieldEst_SingleCell_L6('e', f_EnIIni, ...
+[mVE,~] = MEanFieldEst_SingleCell_L6('e', f_SCIIni, ...
                                          N_EE,N_EI,N_IE,N_II,...
                                          S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                         lambda_E,S_Elgn,rE_amb,S_amb,...
-                                         lambda_I,S_Ilgn,rI_amb,...
-                                         S_EL6,S_IL6,rE_L6,rI_L6,...
+                                         lgn_EOnOff,S_Elgn,rE_amb,S_amb,...
+                                         lgn_I,S_Ilgn,rI_amb,...
+                                         S_EL6,S_IL6,rL6E,rL6I,...
                                          tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                          rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
                                          gL_E,gL_I,Ve,Vi,LIFSimuT);
-[mVI,~] = MEanFieldEst_SingleCell_L6('i', f_EnIIni, ...
+[mVI,~] = MEanFieldEst_SingleCell_L6('i', f_SCIIni, ...
                                          N_EE,N_EI,N_IE,N_II,...
                                          S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                         lambda_E,S_Elgn,rE_amb,S_amb,...
-                                         lambda_I,S_Ilgn,rI_amb,...
-                                         S_EL6,S_IL6,rE_L6,rI_L6,...
+                                         lgn_EOnOff,S_Elgn,rE_amb,S_amb,...
+                                         lgn_I,S_Ilgn,rI_amb,...
+                                         S_EL6,S_IL6,rL6E,rL6I,...
                                          tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                          rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
                                          gL_E,gL_I,Ve,Vi,LIFSimuT);
@@ -140,18 +121,18 @@ end
 % estimate with ref now
 f_EnI0 = MeanFieldEst_BkGd_ref_L6(N_EE,N_EI,N_IE,N_II,...
                                    S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                   lambda_E,S_Elgn,rE_amb,S_amb,...
-                                   lambda_I,S_Ilgn,rI_amb,...
-                                   S_EL6,S_IL6,rE_L6,rI_L6,...
+                                   lgn_EOnOff,S_Elgn,rE_amb,S_amb,...
+                                   lgn_I,S_Ilgn,rI_amb,...
+                                   S_EL6,S_IL6,rL6E,rL6I,...
                                    gL_E,gL_I,Ve,Vi,mVEIn,mVIIn,...
-                                   tau_ref,f_EnIIni);
+                                   tau_ref,f_SCIIni);
 
 Suspicious = (min(f_EnI0)<0);
                                
 %f_EnI0 = max([f_EnI0,[0;0]],[],2);
 %f_EnI0 = abs(f_EnI0);                                     
 %% The new input!
-f_EnIIni = f_EnI0*h_Step + f_EnIIni*(1-h_Step);
+f_SCIIni = f_EnI0*h_Step + f_SCIIni*(1-h_Step);
 
 loop = loop+1;
 
@@ -179,7 +160,7 @@ if (~SteadyIndicate && loop >= StopLoop)
 end
 end
 
-if nargin > 34+4 && strcmpi(varargin(1),'Mean') % Specify: I don't need the trajectory but the final ones    
+if N_Hyp > 0 && strcmpi(HyperPara(1),'Mean') % Specify: I don't need the trajectory but the final ones    
     f_EnIOut = mean(f_EnIOut(:,end-50:end),2);
     meanVs   = mean(meanVs(:,end-50:end),2);
 end
@@ -188,8 +169,7 @@ end
 
 
 %% mean-field est With ref. We use parameters and mean Vs to estimate firing rates
-% Input: C_EE,C_EI,C_IE,C_II connectivity matrices
-%        N_EE,N_EI,N_IE,N_II number of presynaptic neurons
+% Input: N_PreSynPix         connectivity matrix for SCI within pixel. 3*3
 %        S_EE,S_EI,S_IE,S_II synaptic strength
 %        S_EL6,S_IL6,rE_L6,rI_L6 L6 Input
 %        p_EEFail            Synaptic failure prob
@@ -203,179 +183,211 @@ end
 %        f_pre               from previous
 % Output:f_EnI               Estimation of firing rates, E and I
 
-function f_EnI = MeanFieldEst_BkGd_ref_L6(N_EE,N_EI,N_IE,N_II,...
-                                   S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                   lambda_E,S_Elgn,rE_amb,S_amb,...
-                                   lambda_I,S_Ilgn,rI_amb,...
-                                   S_EL6,S_IL6,rE_L6,rI_L6,...
-                                   gL_E,gL_I,Ve,Vi,mVE,mVI,...
-                                   tau_ref,f_pre)
-                               
-% E_sideInd = floor(1*n_E_HC+1):2*n_E_HC;
-% [E_Ind_X,E_Ind_Y] = meshgrid(E_sideInd,E_sideInd);
-% E_Ind = (reshape(E_Ind_X,size(E_Ind_X,1)*size(E_Ind_X,2),1)-1)*n_E_HC*N_HC + reshape(E_Ind_Y,size(E_Ind_X,1)*size(E_Ind_X,2),1);
-% 
-% I_sideInd = floor(1*n_I_HC+1):2*n_I_HC;
-% [I_Ind_X,I_Ind_Y] = meshgrid(I_sideInd,I_sideInd);
-% I_Ind = (reshape(I_Ind_X,size(I_Ind_X,1)*size(I_Ind_X,2),1)-1)*n_I_HC*N_HC + reshape(I_Ind_Y,size(I_Ind_X,1)*size(I_Ind_X,2),1);
-% 
-% % Take averaged number of input neurons 
-% % NOTE! Only picking up the middle part
-% N_EE = mean(sum(C_EE(E_Ind,:),2)); N_EI = mean(sum(C_EI(E_Ind,:),2)); 
-% N_IE = mean(sum(C_IE(I_Ind,:),2)); N_II = mean(sum(C_II(I_Ind,:),2));
+function Fr_MFinv = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+                             S_EE,S_EI,S_IE,S_II,p_EEFail,...
+                             S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                             lgn_EOnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
+                             gL_E,gL_I,Ve,Vi, tau_ref, meanVs, f_pre)                             
+%% PreSynaptic neuron numbers. External and internal (pixel)
+N_SSi = N_PreSynPix(1,1); N_CSi = N_PreSynPix(1,2); N_ISi = N_PreSynPix(1,3); %% REally?? Row/Col
+N_SCi = N_PreSynPix(2,1); N_CCi = N_PreSynPix(2,2); N_ICi = N_PreSynPix(2,3); 
+N_SIi = N_PreSynPix(3,1); N_CIi = N_PreSynPix(3,2); N_IIi = N_PreSynPix(3,3); 
 
 % Downplay current by a ref factor
-ref_fac = 1-f_pre*tau_ref/1000;
-% Matrix of firing rates
-MatEI = [N_EE*S_EE*(Ve-mVE)*(1-p_EEFail)*ref_fac(1), N_EI*S_EI*(Vi-mVE)*ref_fac(1);
-         N_IE*S_IE*(Ve-mVI)*ref_fac(2),              N_II*S_II*(Vi-mVI)*ref_fac(2)];
+RefM = diag(1-f_pre*tau_ref/1000);
+% Mats
+MatSS = (S_EE*(1-p_EEFail))*N_SSi; MatCS = (S_EE*(1-p_EEFail))*N_CSi; MatIS = S_IE * N_ISi;
+MatSC = (S_EE*(1-p_EEFail))*N_SCi; MatCC = (S_EE*(1-p_EEFail))*N_CCi; MatIC = S_IE * N_ICi;
+MatSI = S_EI *              N_SIi; MatCI = S_EI *              N_CIi; MatII = S_II * N_IIi;
 
-% External Drive and leaky current. Note that simulaton is by ms, so need *1000
-VecInput = [(Ve-mVE) * (lambda_E*S_Elgn + rE_amb*S_amb + rE_L6*S_EL6);
-            (Ve-mVI) * (lambda_I*S_Ilgn + rI_amb*S_amb + rI_L6*S_IL6)]*1000;
-Leak = -[gL_E*mVE;
-        gL_I*mVI]*1000; % leak has opposite signs of mean Vs
-
-f_EnI = -(MatEI-eye(2))^-1*((Leak+VecInput).*ref_fac);    
+eVSOn  = (Ve-meanVs(1));  iVSOn  = (Vi-meanVs(1));
+eVCOn  = (Ve-meanVs(2));  iVCOn  = (Vi-meanVs(2));
+eVSOff = (Ve-meanVs(3));  iVSOff = (Vi-meanVs(3));
+eVCOff = (Ve-meanVs(4));  iVCOff = (Vi-meanVs(4));
+eVI    = (Ve-meanVs(5));  iVI    = (Vi-meanVs(5));
+% post/pre SOn              COn              SOff             COff             I
+ConnMat = [MatSS/2.*eVSOn,  MatSC/2.*eVSOn,  MatSS/2.*eVSOn,  MatSC/2.*eVSOn,  MatSI.*iVSOn;  % SOn
+           MatCS/2.*eVCOn,  MatCC/2.*eVCOn,  MatCS/2.*eVCOn,  MatCC/2.*eVCOn,  MatCI.*iVCOn;  % COn
+           MatSS/2.*eVSOff, MatSC/2.*eVSOff, MatSS/2.*eVSOff, MatSC/2.*eVSOff, MatSI.*iVSOff; % SOff
+           MatCS/2.*eVCOff, MatCC/2.*eVCOff, MatCS/2.*eVCOff, MatCC/2.*eVCOff, MatCI.*iVCOff; % COff
+           MatIS/2.*eVI,    MatIC/2.*eVI,    MatIS/2.*eVI,    MatIC/2.*eVI,    MatII.*iVI];   % I
+% Leak On/Off
+LeakSOn  = gL_E * (0-meanVs(1)) * 1e3;
+LeakCOn  = gL_E * (0-meanVs(2)) * 1e3;
+LeakSOff = gL_E * (0-meanVs(3)) * 1e3;
+LeakCOff = gL_E * (0-meanVs(4)) * 1e3;
+LeakI =    gL_I * (0-meanVs(5)) * 1e3;
+LeakV = [LeakSOn;
+         LeakCOn;
+         LeakSOff;
+         LeakCOff;
+         LeakI];
+% Ext
+ExtSOn  = (lgn_EOnOff(1)*NlgnS*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVSOn *1e3 ...
+        + (L4SI*S_EI)*iVSOn + L4SE*S_EE*eVSOn*(1-p_EEFail); 
+ExtCOn  = (lgn_EOnOff(1)*NlgnC*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVCOn *1e3 ...
+        + (L4CI*S_EI)*iVCOn + L4CE*S_EE*eVCOn*(1-p_EEFail);
+ExtSOff = (lgn_EOnOff(2)*NlgnS*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVSOff *1e3...
+        + (L4SI*S_EI)*iVSOn + L4SE*S_EE*eVSOff*(1-p_EEFail);
+ExtCOff = (lgn_EOnOff(2)*NlgnC*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVCOff *1e3...
+        + (L4CI*S_EI)*iVCOn + L4CE*S_EE*eVCOff*(1-p_EEFail);
+ExtI =    (lgn_I        *NlgnI*S_Ilgn + rI_amb*S_amb + rL6I*S_IL6)*eVI    *1e3...
+        + (L4II*S_II)*iVI   + L4IE*S_IE*eVI;
+ExtV = [ExtSOn;
+        ExtCOn;
+        ExtSOff;
+        ExtCOff
+        ExtI];
+    
+Fr_MFinv = (eye(5)-RefM*ConnMat) \ (RefM * ( ExtV + LeakV));
 %f_EnI = -(ref_fac*MatEI-eye(2))^-1*ref_fac*(Leak+VecInput);
 
 end
 
-%% mean-field w/o ref. We use parameters and mean Vs to estimate firing rates
-% Input: C_EE,C_EI,C_IE,C_II connectivity matrices
-%        N_EE,N_EI,N_IE,N_II number of presynaptic neurons
-%        S_EE,S_EI,S_IE,S_II synaptic strength
-%        S_EL6,S_IL6,rE_L6,rI_L6 L6 Input
-%        p_EEFail            Synaptic failure prob
-%        lambda_E lambda_I   LGN input
-%        rE_amb rI_amb       Ambient input
-%        S_Elgn S_Ilgn S_amb Synaptic strength of drives
-%        gL_E,gL_I           Leaky time constants
-%        Ve,Vi               Reversak potentials
-%        mVE,mVI             Mean Vs, collected from simulation
-% Output:f_EnI               Estimation of firing rates, E and I
-
-function f_EnI = MeanFieldEst_BkGd_L6(N_EE,N_EI,N_IE,N_II,...
-                                   S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                   lambda_E,S_Elgn,rE_amb,S_amb,...
-                                   lambda_I,S_Ilgn,rI_amb,...
-                                   S_EL6,S_IL6,rE_L6,rI_L6,...
-                                   gL_E,gL_I,Ve,Vi,mVE,mVI)
-                               
-% E_sideInd = floor(1*n_E_HC+1):2*n_E_HC;
-% [E_Ind_X,E_Ind_Y] = meshgrid(E_sideInd,E_sideInd);
-% E_Ind = (reshape(E_Ind_X,size(E_Ind_X,1)*size(E_Ind_X,2),1)-1)*n_E_HC*N_HC + reshape(E_Ind_Y,size(E_Ind_X,1)*size(E_Ind_X,2),1);
-% 
-% I_sideInd = floor(1*n_I_HC+1):2*n_I_HC;
-% [I_Ind_X,I_Ind_Y] = meshgrid(I_sideInd,I_sideInd);
-% I_Ind = (reshape(I_Ind_X,size(I_Ind_X,1)*size(I_Ind_X,2),1)-1)*n_I_HC*N_HC + reshape(I_Ind_Y,size(I_Ind_X,1)*size(I_Ind_X,2),1);
-% 
-% % Take averaged number of input neurons 
-% % NOTE! Only picking up the middle part
-% N_EE = mean(sum(C_EE(E_Ind,:),2)); N_EI = mean(sum(C_EI(E_Ind,:),2)); 
-% N_IE = mean(sum(C_IE(I_Ind,:),2)); N_II = mean(sum(C_II(I_Ind,:),2));
-
-% Matrix of firing rates
-MatEI = [N_EE*S_EE*(Ve-mVE)*(1-p_EEFail), N_EI*S_EI*(Vi-mVE);
-         N_IE*S_IE*(Ve-mVI),              N_II*S_II*(Vi-mVI)];
-
-% External Drive and leaky current. Note that simulaton is by ms, so need *1000
-VecInput = [(Ve-mVE) * (lambda_E*S_Elgn + rE_amb*S_amb + rE_L6*S_EL6);
-            (Ve-mVI) * (lambda_I*S_Ilgn + rI_amb*S_amb + rI_L6*S_IL6)]*1000;
-Leak = -[gL_E*mVE;
-        gL_I*mVI]*1000; % leak has opposite signs of mean Vs
-    
-f_EnI = -(MatEI-eye(2))^-1*(Leak+VecInput);
-
-end
 %% single cell simulation: to collect mean V (and firing rates)
 
-
-function [meanV,fr] = MEanFieldEst_SingleCell_L6(NeuronType, f_EnI, ...
-                                         N_EE,N_EI,N_IE,N_II,...
-                                         S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                         lambda_E,S_Elgn,rE_amb,S_amb,...
-                                         lambda_I,S_Ilgn,rI_amb,...
-                                         S_EL6,S_IL6,rE_L6,rI_L6,...
-                                         tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
-                                         rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
-                                         gL_E,gL_I,Ve,Vi,LIFSimuT)
-%% attribute parameters for different types of neurons
-if strcmpi(NeuronType,'e')
-    N_E = N_EE; N_I = N_EI;
-    S_E = S_EE; S_I = S_EI;
-    p_Fail = p_EEFail;
-    lambda = lambda_E; S_lgn = S_Elgn; r_amb = rE_amb;
-    S_L6 = S_EL6; r_L6 = rE_L6;
-    gL = gL_E;
-    rho_ampa = rhoE_ampa; rho_nmda = rhoE_nmda;
-elseif strcmpi(NeuronType,'i')
-    N_E = N_IE; N_I = N_II;
-    S_E = S_IE; S_I = S_II;
-    p_Fail = 0;
-    lambda = lambda_I; S_lgn = S_Ilgn; r_amb = rI_amb;
-    S_L6 = S_IL6; r_L6 = rI_L6;
-    gL = gL_I;
-    rho_ampa = rhoI_ampa; rho_nmda = rhoI_nmda;
-else 
-    disp('***Unrecognized Neuron Type')    
+function [mVs,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+                                 S_EE,S_EI,S_IE,S_II,p_EEFail,...
+                                 S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                                 lgn_EOnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
+                                 tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
+                                 rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
+                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt) % No more Freq
+                               % Last two lines in case we have used current input...
+%% First check if L4 rates match neuron numbers
+if length(Fr_MFinv) == 3*PixNum
+rE = (Fr_MFinv(1:PixNum) + Fr_MFinv(PixNum+1:2*PixNum))/2; 
+rI = Fr_MFinv(2*PixNum+1:3*PixNum); % f_EnI in s^-1, but here we use ms^-1
+rE(rE<=0) = 0; rI(rI<0) = 0;
+else
+    error('L4 FRs dont match!')
 end
-rE = f_EnI(1)/1000; rI = f_EnI(2)/1000; % f_EnI in s^-1, but here we use ms^-1
-%% Evolve single neurons
+%% Setup input and record
 T = LIFSimuT; % in ms. Default: 20*1e3 ms
-dt = 0.1; t = 0:dt:T;
-SampleProp = 9/10; % last half time for meanV
-
-v = zeros(size(t)); 
-G_gaba_D = zeros(size(t)); G_gaba_R = zeros(size(t));
-G_ampa_D = zeros(size(t)); G_ampa_R = zeros(size(t));
-G_nmda_D = zeros(size(t)); G_nmda_R = zeros(size(t));
-spike = [];
-
-%rng(100)
-% input determination: Assume all Poisson
-%rng(100)
-p_lgn = dt*lambda;                    Sp_lgn = double(rand(size(t))<=p_lgn);
-%rng(101)
-p_amb = dt*r_amb;                     Sp_amb = double(rand(size(t))<=p_amb);
-%rng(102)
-p_EV1 = dt*rE*full(N_E)*(1-p_Fail);   Sp_EV1 = double(rand(size(t))<=p_EV1);
-%rng(103)
-p_IV1 = dt*rI*full(N_I);              Sp_IV1 = double(rand(size(t))<=p_IV1);
-p_L6  = dt*r_L6;                      Sp_L6  = double(rand(size(t))<=p_L6);
-
-RefTimer = 0; 
-for tInd = 1:length(t)-1
-    % Firstly, refrectory neurons get out due to exponetial distributed time
-     if isnan(v(tInd))
-        RefTimer = RefTimer+dt; %RefTimer goes up
-        if RefTimer>=tau_ref    %if timer reach tau_ref, kick v out of refrectory
-            v(tInd+1) = 0;
-            RefTimer = 0;
-        else
-            v(tInd+1) = nan;
-        end
-     else
-         G_I = 1/(tau_gaba_D-tau_gaba_R) * (G_gaba_D(tInd) - G_gaba_R(tInd)); % S_EI is included in amplitude of GE_gaba
-         G_E = 1/(tau_ampa_D-tau_ampa_R) * (G_ampa_D(tInd) - G_ampa_R(tInd)) ...
-             + 1/(tau_nmda_D-tau_nmda_R) * (G_nmda_D(tInd) - G_nmda_R(tInd)); % 
-         vv  = v(tInd) + dt*(-gL*v(tInd) - G_E.*(v(tInd)-Ve) - G_I.*(v(tInd)-Vi)); 
-         if vv >= 1
-             v(tInd+1) = nan;
-             spike = [spike,t(tInd)];
-         else
-             v(tInd+1) = vv;
+T1s = 1e3;
+tt = 0:dt:T;
+t1 = 0:dt:T1s;
+SampleProp = 19/20; % last half time for meanV
+DroptInd = floor(length(tt)*(1-SampleProp));
+% L4 input determination: Assume all Poisson
+% Can be optimized in the future, but let's make var correct for now
+L4EInputNow = [C_EE_Pixel_Us*rE*(1-p_EEFail); 
+               C_IE_Pixel_Us*rE             ]/1000;   
+L4IInputNow = [C_EI_Pixel_Us*rI             ; 
+               C_II_Pixel_Us*rI             ]/1000;   
+L4Pix_EventsEU  = PoissonInputForNetwork(2*PixNum,L4EInputNow,LIFSimuT*TimeFrac,dt); % E to everyone
+L4Pix_EventsIU  = PoissonInputForNetwork(2*PixNum,L4IInputNow,LIFSimuT*TimeFrac,dt); % I to everyone           
+% Adjust Phase variant LGN
+% Note: For LGN, I did the same scaling stuff for network simulation, so
+% keep it for now.
+tMod = T1s/LGNFreq; MaxOnPhase = tMod/2;
+OnOffPhase = floor(mod(t1,tMod)/MaxOnPhase);
+OnOffPhasePix = zeros(size(lgnEPix_Events));
+OnOffPhasePix(:,OnOffPhase == 0) = repmat(lambda_EOff_Pixel, 1, sum(OnOffPhase == 0));
+OnOffPhasePix(:,OnOffPhase == 1) = repmat(lambda_EOn_Pixel, 1, sum(OnOffPhase == 1));
+OnOffMulp = OnOffPhasePix./repmat(lambda_E_Pixel,1,length(t1));
+% Leakage
+gL = [gL_E*ones(size(rE)); gL_I*ones(size(rI))];
+% Initialize records
+sumVOn = zeros(2*PixNum, 1);
+sumVOff = zeros(2*PixNum, 1);
+VNanOnCount = zeros(2*PixNum, 1);
+VNanOffCount = zeros(2*PixNum, 1);
+vt = zeros(2*PixNum, 1);
+%% Evolve single neurons
+RefTimer = zeros(2*PixNum, 1); 
+vRecordNum = 0;
+mVEon = zeros(PixNum,floor(T/T1s));
+mVEoff = zeros(PixNum,floor(T/T1s));
+mVI = zeros(PixNum,floor(T/T1s));
+%% Can precompute all Gs...
+for tInd = 1:length(tt)-1
+    % First, Get input matrices from series
+    InpWin = T1s; FrameNum = floor(InpWin/dt);
+    FrameInd = mod(tInd, FrameNum);
+    if FrameInd == 0
+    FrameInd = FrameNum;
+    end
+    
+    % When sample from Gs, GAMPA and GNMDA should use same time frame;
+    if FrameInd == 1 % if the first frame, recompute input mats
+        vRecord = zeros(length(vt),FrameNum);
+        lgnEPix_Events = lgnEPix_Events(:,randperm(length(t1))); lgnIPix_Events = lgnIPix_Events(:,randperm(length(t1)));
+        AmbEPix_Events = AmbEPix_Events(:,randperm(length(t1))); AmbIPix_Events = AmbIPix_Events(:,randperm(length(t1)));
+        L6EPix_Events = L6EPix_Events(:,randperm(length(t1)));   L6IPix_Events = L6IPix_Events(:,randperm(length(t1)));
+        L4Pix_EventsEU = L4Pix_EventsEU(:,randperm(length(t1))); L4Pix_EventsIU = L4Pix_EventsIU(:,randperm(length(t1)));
+        % Incorporate L4 and other input
+        EampaInp = single(full(S_Elgn * (lgnEPix_Events + lambda_E_Pixel*dt*LGNCurInp).*OnOffMulp ...
+                             + S_amb  *  AmbEPix_Events ...
+                             + S_EL6  * (L6EPix_Events  + L6E_Pixel*dt*L6CurInp) * rhoE_ampa)); %  * rhoE_ampa
+        IampaInp = single(full(S_Ilgn * (lgnIPix_Events+ lambda_I_Pixel*dt*LGNCurInp) ...
+                             + S_amb  *  AmbIPix_Events ...
+                             + S_IL6  * (L6IPix_Events  + L6I_Pixel*dt*L6CurInp) * rhoI_ampa)); %  * rhoI_ampa
+        
+        EnmdaInp = single(full(S_EL6  * (L6EPix_Events  + L6E_Pixel*dt*L6CurInp) * rhoE_nmda)); %
+        InmdaInp = single(full(S_IL6  * (L6IPix_Events  + L6I_Pixel*dt*L6CurInp) * rhoI_nmda));
+        L4InputfEampa = single(full( [S_EE * L4Pix_EventsEU(1:PixNum,:)          * rhoE_ampa;
+                                      S_IE * L4Pix_EventsEU(PixNum+1:2*PixNum,:) * rhoI_ampa] ));
+        L4InputfEnmda = single(full( [S_EE * L4Pix_EventsEU(1:PixNum,:)          * rhoE_nmda;
+                                      S_IE * L4Pix_EventsEU(PixNum+1:2*PixNum,:) * rhoI_nmda] ));
+        L4InputfI     = single(full( [S_EI * L4Pix_EventsIU(1:PixNum,:);
+                                      S_II * L4Pix_EventsIU(PixNum+1:2*PixNum,:)] ));
+        %% Precompute All Conductances: Speed up by ifft/fft
+        winAMPA = 0:dt:tau_ampa_D*5;
+        winNMDA = 0:dt:tau_nmda_D*5;
+        winGABA = 0:dt:tau_gaba_D*5;
+        KerAMPA = 1/(tau_ampa_D-tau_ampa_R) * (exp(-winAMPA/tau_ampa_D) - exp(-winAMPA/tau_ampa_R));
+        KerNMDA = 1/(tau_nmda_D-tau_nmda_R) * (exp(-winNMDA/tau_nmda_D) - exp(-winNMDA/tau_nmda_R));
+        KerGABA = 1/(tau_gaba_D-tau_gaba_R) * (exp(-winGABA/tau_gaba_D) - exp(-winGABA/tau_gaba_R));
+        KerAMPA = KerAMPA / (sum(KerAMPA)*dt);
+        KerNMDA = KerNMDA / (sum(KerNMDA)*dt);
+        KerGABA = KerGABA / (sum(KerGABA)*dt);
+        n = size(EampaInp,2);
+        GAMPA = ifft(fft(([EampaInp; IampaInp] + L4InputfEampa)',n) .* repmat(fft(KerAMPA',n),1,2*PixNum))';
+        GNMDA = ifft(fft(([EnmdaInp; InmdaInp] + L4InputfEnmda)',n) .* repmat(fft(KerNMDA',n),1,2*PixNum))';
+        GGABA = ifft(fft(L4InputfI',n)                              .* repmat(fft(KerGABA',n),1,2*PixNum))';
+        GE = GAMPA + GNMDA; GI = GGABA;
+        GEU = GE;  
+        GIU = GI; 
+        vRecordNum = vRecordNum + 1;
+    end
+    
+    % Firstly, refrectory neurons get out if timer reachs t_ref
+    RefTimer(isnan(vt)) = RefTimer(isnan(vt)) + dt;
+    vt(RefTimer>=tau_ref) = 0;
+    RefTimer(RefTimer>=tau_ref) = 0;
+    
+    ov  = vt + dt*(-gL.*vt - GEU(:,FrameInd).*(vt-Ve) - GIU(:,FrameInd).*(vt-Vi));
+    ov(ov>=1) = nan;
+    vRecord(:,FrameInd) = ov;
+    
+    if FrameInd == FrameNum
+        mVEon(:,vRecordNum) = nanmean(vRecord(1:PixNum , find(OnOffPhase == 1)), 2);
+        mVEoff(:,vRecordNum) = nanmean(vRecord(1:PixNum , find(OnOffPhase == 0)), 2);
+        mVI(:,vRecordNum) = nanmean(vRecord(PixNum+1:2*PixNum,:),2);
+    end
+    % Compute meanV
+     if tInd > DroptInd
+         if OnOffPhase(FrameInd) == 1
+%             VNanOnCount = VNanOnCount + isnan(ov);
+%             osv = ov; osv(isnan(osv)) = 0;
+%             sumVOn = sumVOn + osv;
+             FrEOnLIF = FrEOnLIF + SpNow(1:PixNum);
+         elseif OnOffPhase(FrameInd) == 0
+%       % sumV = sum([sumV,ov],2,'omitnan');
+%             VNanOffCount = VNanOffCount + isnan(ov);
+%             osv = ov; osv(isnan(osv)) = 0;
+%             sumVOff = sumVOff + osv;
+             FrEOffLIF = FrEOffLIF + SpNow(1:PixNum);   
          end
+         FrILIF = FrILIF + SpNow(PixNum+1:2*PixNum);
      end
-
-     % conductances
-     G_gaba_R(tInd+1) = (G_gaba_R(tInd) +                                           S_I*Sp_IV1(tInd)                                     ) * exp(-dt/tau_gaba_R); 
-     G_gaba_D(tInd+1) = (G_gaba_D(tInd) +                                           S_I*Sp_IV1(tInd)                                     ) * exp(-dt/tau_gaba_D); 
-     G_ampa_R(tInd+1) = (G_ampa_R(tInd) + S_lgn*Sp_lgn(tInd) + S_amb*Sp_amb(tInd) + S_E*Sp_EV1(tInd)*rho_ampa + S_L6*Sp_L6(tInd)*rho_ampa) * exp(-dt/tau_ampa_R);
-     G_ampa_D(tInd+1) = (G_ampa_D(tInd) + S_lgn*Sp_lgn(tInd) + S_amb*Sp_amb(tInd) + S_E*Sp_EV1(tInd)*rho_ampa + S_L6*Sp_L6(tInd)*rho_ampa) * exp(-dt/tau_ampa_D);
-     G_nmda_R(tInd+1) = (G_nmda_R(tInd) +                                           S_E*Sp_EV1(tInd)*rho_nmda + S_L6*Sp_L6(tInd)*rho_nmda) * exp(-dt/tau_nmda_R);
-     G_nmda_D(tInd+1) = (G_nmda_D(tInd) +                                           S_E*Sp_EV1(tInd)*rho_nmda + S_L6*Sp_L6(tInd)*rho_nmda) * exp(-dt/tau_nmda_D);
+    % Transfer variables
+    vt = ov; 
 end
-meanV = mean(v(floor(end*(1-SampleProp)):end), 'omitnan');
-fr = length(find(spike>(1-SampleProp)*T))/(T*SampleProp/1000);
+mVOnLIF = sumVOn./((length(tt)-1 - DroptInd)/2 - VNanOnCount);
+mVOffLIF = sumVOff./((length(tt)-1 - DroptInd)/2 - VNanOffCount);
+mVEOnLIF = mVOnLIF(1:PixNum); mVEOffLIF = mVOffLIF(1:PixNum);
+mVILIF = (mVOnLIF(PixNum+1:2*PixNum) + mVOffLIF(PixNum+1:2*PixNum))/2;
+% fr = length(find(spike>(1-SampleProp)*T))/(T*SampleProp/1000);
 end
