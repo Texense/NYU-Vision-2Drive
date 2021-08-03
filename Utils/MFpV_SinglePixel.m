@@ -181,7 +181,7 @@ end
 %        mVE,mVI             Mean Vs, collected from simulation
 %        tau_ref             ref period, in ms
 %        f_pre               from previous
-% Output:f_EnI               Estimation of firing rates, E and I
+% Output:Fr_MFinv            Estimation of firing rates, Son, Soff, Con, Coff, I
 
 function Fr_MFinv = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
                              S_EE,S_EI,S_IE,S_II,p_EEFail,...
