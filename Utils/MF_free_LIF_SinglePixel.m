@@ -11,7 +11,7 @@
 %        S_EL6,S_IL6,rE_L6,rI_L6, L6 Input, All Scalar
 %        S_amb,rE_amb,rI_amb      amb Input, All Scalar
 %        p_EEFail                 E-to-E Synaptic failure prob
-%        lgn_S/COnOff,lgn_I       LGN input rate. Phase OnOff for E (2*1 vec) 
+%        lgn_EOnOff,lgn_I         LGN input rate. Phase OnOff for E (2*1 vec) 
 %        S_Elgn S_Ilgn            LGN strength of drives
 %        NlgnS,NlgnC,NlgnI        LGN neuron # to SCI cells
 %        gL_E,gL_I                Leaky time constants
@@ -29,13 +29,13 @@
 %% Ver 5:       For single pixels
 % iteration
 % Zhuo-Cheng Xiao 07/27/2021
-function [f_EnIOut,meanVs,loop,SteadyIndicate,FailureIndicate]...
-           = MFpV_SinglePixel(...
+function [f_EnIOut,loop,SteadyIndicate,FailureIndicate]...
+           = MF_free_LIF_SinglePixel(...
 ...% MF Parameters                     
                      N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
                      S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                     lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
+                     lgn_EOnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
                      gL_E,gL_I,Ve,Vi, tau_ref,... %5
 ...% Below are LIF details
                      tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
@@ -68,17 +68,7 @@ else
 end
 dt = 0.1;
 % initialize with a reasonable guess     
-mVSOn = 0.67; mVSOff = 0.57; 
-mVCOn = 0.67; mVCOff = 0.57;
-mVI = 0.77; 
-f_pre = zeros(5,1);
-meanVs = [mVSOn;mVSOff;mVCOn;mVCOff;mVI];
-f_SCIIni = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
-                       S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                       S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                       lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
-                       gL_E,gL_I,Ve,Vi, tau_ref, meanVs, f_pre,f_pre);
-f_EnIOut = f_SCIIni;
+f_EnIOut = zeros(5,1);
 
 loop = 0;
 SteadyCounter = 0; % Indicate the number of loops after steady condition
@@ -90,43 +80,29 @@ FailureIndicate = 0;
 Suspicious = false;
 while SteadyCounter<AveLoop %the formal ending condition
 % simulate one neuron with input                             
-[mVLIF,FrLIF] = LIF1Pixel(f_EnIOut(:,end), N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+[~,FrLIF] = LIF1Pixel(f_EnIOut(:,end), N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
                                  S_EE,S_EI,S_IE,S_II,p_EEFail,...
                                  S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                                 lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
+                                 lgn_EOnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
                                  gL_E,gL_I,Ve,Vi,LIFSimuT, dt); % No more Freq                                   
 %% NOW! consider the previous mVs if it already satisfies steady condition
-if loop>100
-    mVIn = mean(meanVs(:,end-10+1:end)) * 0.9 + mVLIF*0.1;
+if loop>50
+    f_EnI0 = mean(f_EnIOut(:,end-10+1:end)) * 0.9 + FrLIF*0.1;
 else
-     mVIn = mVLIF;
+     f_EnI0 = FrLIF;
 end
 
-% estimate with ref now
-f_EnI0 = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
-                             S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                             S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                             lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
-                             gL_E,gL_I,Ve,Vi, tau_ref, mVIn, f_SCIIni, FrLIF); 
                                
-                               
-Suspicious = (min(f_EnI0)<-5);
-                               
-%f_EnI0 = max([f_EnI0,[0;0]],[],2);
-%f_EnI0 = abs(f_EnI0);                                     
-%% The new input!
-f_SCIIni = f_EnI0*h_Step + f_SCIIni*(1-h_Step);
-
 loop = loop+1;
 
 f_EnIOut = [f_EnIOut,f_EnI0];
-meanVs = [meanVs, mVIn];
+%meanVs = [meanVs, mVIn];
 
 if ~SteadyIndicate
-  if loop >= TestPoints && mean(std(f_EnIOut(:,end-TestPoints+1:end),0,2) ...
-                            ./mean(f_EnIOut(:,end-TestPoints+1:end),2))<0.07 % std/mean for the last 10 samples
+  if loop >= TestPoints && max(std(f_EnIOut(:,end-TestPoints+1:end),0,2) ...
+                            ./mean(f_EnIOut(:,end-TestPoints+1:end),2))<0.1 % std/mean for the last 10 samples
      SteadyIndicate = true;
   end  
 else 
@@ -147,118 +123,17 @@ end
 
 if N_Hyp > 0 && strcmpi(HyperPara(1),'Mean') % Specify: I don't need the trajectory but the final ones    
     f_EnIOut = mean(f_EnIOut(:,end-50:end),2);
-    meanVs   = mean(meanVs(:,end-50:end),2);
+    %meanVs   = mean(meanVs(:,end-50:end),2);
 end
 end
 
-
-
-%% mean-field est With ref. We use parameters and mean Vs to estimate firing rates
-% Input: N_PreSynPix         connectivity matrix for SCI within pixel. 3*3
-%        S_EE,S_EI,S_IE,S_II synaptic strength
-%        S_EL6,S_IL6,rE_L6,rI_L6 L6 Input
-%        p_EEFail            Synaptic failure prob
-%        lambda_E lambda_I   LGN input
-%        rE_amb rI_amb       Ambient input
-%        S_Elgn S_Ilgn S_amb Synaptic strength of drives
-%        gL_E,gL_I           Leaky time constants
-%        Ve,Vi               Reversak potentials
-%        mVE,mVI             Mean Vs, collected from simulation
-%        tau_ref             ref period, in ms
-%        f_pre               from previous
-% Output:Fr_MFinv            Estimation of firing rates, Son, Soff, Con, Coff, I
-
-function Fr_MFinv = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
-                             S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                             S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                             lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
-                             gL_E,gL_I,Ve,Vi, tau_ref, meanVs, f_pre, FrLIF)                             
-%% PreSynaptic neuron numbers. External and internal (pixel)
-N_SSi = N_PreSynPix(1,1); N_CSi = N_PreSynPix(1,2); N_ISi = N_PreSynPix(1,3); %% REally?? Row/Col
-N_SCi = N_PreSynPix(2,1); N_CCi = N_PreSynPix(2,2); N_ICi = N_PreSynPix(2,3); 
-N_SIi = N_PreSynPix(3,1); N_CIi = N_PreSynPix(3,2); N_IIi = N_PreSynPix(3,3); 
-
-% Downplay current by a ref factor
-% Use LIF firing rates if negative value emerges
-f_preU = f_pre; f_preU(f_pre<0) = FrLIF(f_pre<0);
-RefM = diag(1-f_preU*tau_ref/1000);
-% Mats
-MatSS = (S_EE*(1-p_EEFail))*N_SSi; MatCS = (S_EE*(1-p_EEFail))*N_CSi; MatIS = S_IE * N_ISi;
-MatSC = (S_EE*(1-p_EEFail))*N_SCi; MatCC = (S_EE*(1-p_EEFail))*N_CCi; MatIC = S_IE * N_ICi;
-MatSI = S_EI *              N_SIi; MatCI = S_EI *              N_CIi; MatII = S_II * N_IIi;
-
-eVSOn  = (Ve-meanVs(1));  iVSOn  = (Vi-meanVs(1));
-eVCOn  = (Ve-meanVs(2));  iVCOn  = (Vi-meanVs(2));
-eVSOff = (Ve-meanVs(3));  iVSOff = (Vi-meanVs(3));
-eVCOff = (Ve-meanVs(4));  iVCOff = (Vi-meanVs(4));
-eVI    = (Ve-meanVs(5));  iVI    = (Vi-meanVs(5));
-% post/pre SOn              COn              SOff             COff             I
-ConnMat = [MatSS/2.*eVSOn,  MatSC/2.*eVSOn,  MatSS/2.*eVSOn,  MatSC/2.*eVSOn,  MatSI.*iVSOn;  % SOn
-           MatCS/2.*eVCOn,  MatCC/2.*eVCOn,  MatCS/2.*eVCOn,  MatCC/2.*eVCOn,  MatCI.*iVCOn;  % COn
-           MatSS/2.*eVSOff, MatSC/2.*eVSOff, MatSS/2.*eVSOff, MatSC/2.*eVSOff, MatSI.*iVSOff; % SOff
-           MatCS/2.*eVCOff, MatCC/2.*eVCOff, MatCS/2.*eVCOff, MatCC/2.*eVCOff, MatCI.*iVCOff; % COff
-           MatIS/2.*eVI,    MatIC/2.*eVI,    MatIS/2.*eVI,    MatIC/2.*eVI,    MatII.*iVI];   % I
-% Leak On/Off
-LeakSOn  = gL_E * (0-meanVs(1)) * 1e3;
-LeakCOn  = gL_E * (0-meanVs(2)) * 1e3;
-LeakSOff = gL_E * (0-meanVs(3)) * 1e3;
-LeakCOff = gL_E * (0-meanVs(4)) * 1e3;
-LeakI =    gL_I * (0-meanVs(5)) * 1e3;
-LeakV = [LeakSOn;
-         LeakCOn;
-         LeakSOff;
-         LeakCOff;
-         LeakI];
-% Ext
-ExtSOn  = (lgn_SOnOff(1)*NlgnS*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVSOn *1e3 ...
-        + (L4SI*S_EI)*iVSOn + L4SE*S_EE*eVSOn*(1-p_EEFail); 
-ExtCOn  = (lgn_COnOff(1)*NlgnC*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVCOn *1e3 ...
-        + (L4CI*S_EI)*iVCOn + L4CE*S_EE*eVCOn*(1-p_EEFail);
-ExtSOff = (lgn_SOnOff(2)*NlgnS*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVSOff *1e3...
-        + (L4SI*S_EI)*iVSOn + L4SE*S_EE*eVSOff*(1-p_EEFail);
-ExtCOff = (lgn_COnOff(2)*NlgnC*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVCOff *1e3...
-        + (L4CI*S_EI)*iVCOn + L4CE*S_EE*eVCOff*(1-p_EEFail);
-ExtI =    (lgn_I        *NlgnI*S_Ilgn + rI_amb*S_amb + rL6I*S_IL6)*eVI    *1e3...
-        + (L4II*S_II)*iVI   + L4IE*S_IE*eVI;
-ExtV = [ExtSOn;
-        ExtCOn;
-        ExtSOff;
-        ExtCOff
-        ExtI];
-
-
-Fr_MFinv = (eye(5)-RefM*ConnMat) \ (RefM * ( ExtV + LeakV)); 
-Fr_MFinv(Fr_MFinv<0) = 0;
-% FrPreUseDim = Fr_MFinv<0; 
-% FrPreUse = FrLIF(Fr_MFinv<0);
-% if isempty(FrPreUse)
-%     return
-% else
-%     Fr_MFinv(FrPreUseDim) = FrPreUse;
-% %     FrPreVec = zeros(5,1); FrPreVec(FrPreUseDim) = FrPreUse;
-% %     DimAll = 1:5; FrminusDim = DimAll(~ismember(DimAll,FrPreUseDim));
-% %     FrPreReplace = RefM*ConnMat * FrPreVec;
-% %     % Now compute in the subspace
-% %     FrPreMinus = FrPreReplace(FrminusDim);
-% %     RefMMinus  = RefM(FrminusDim, FrminusDim);
-% %     ConnMatMinus = ConnMat(FrminusDim, FrminusDim);
-% %     ExtVMinus = ExtV(FrminusDim);
-% %     LeakVMinus = LeakV(FrminusDim);
-% %     Fr_MFinvMinus = (eye(length(FrminusDim))-RefMMinus*ConnMatMinus) \ ...
-% %         (RefMMinus * ( ExtVMinus + LeakVMinus) + FrPreMinus);
-% %     % make up MF output
-% %     Fr_MFinv = zeros(5,1);
-% %     Fr_MFinv(FrminusDim) = Fr_MFinvMinus; Fr_MFinv(FrPreUseDim) = FrPreUse;
-% end
-
-end
 
 % single cell simulation: to collect mean V (and firing rates)
 
 function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
                                  S_EE,S_EI,S_IE,S_II,p_EEFail,...
                                  S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                                 lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
+                                 lgn_EOnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
                                  gL_E,gL_I,Ve,Vi,LIFSimuT, dt) % No more Freq
@@ -292,10 +167,10 @@ L4IInputNow = [L4SIAll; L4CIAll; L4SIAll; L4CIAll; L4IIAll]/1000;
 L4Pix_EventsEU = PoissonInputForNetwork(5,L4EInputNow,LIFSimuT*TimeFrac,dt*dtMltp); % E to everyone
 L4Pix_EventsIU = PoissonInputForNetwork(5,L4IInputNow,LIFSimuT*TimeFrac,dt*dtMltp); % I to everyone 
 % LGN, amb, L6
-LgnInputNow = [lgn_SOnOff(1)*NlgnS; 
-               lgn_COnOff(1)*NlgnC;
-               lgn_SOnOff(2)*NlgnS; 
-               lgn_COnOff(2)*NlgnC;
+LgnInputNow = [lgn_EOnOff(1)*NlgnS; 
+               lgn_EOnOff(1)*NlgnC;
+               lgn_EOnOff(2)*NlgnS; 
+               lgn_EOnOff(2)*NlgnC;
                lgn_I        *NlgnI];
 lgnPix_Events = PoissonInputForNetwork(5,LgnInputNow,LIFSimuT*TimeFrac,dt*dtMltp);
 AmbPix_Events = PoissonInputForNetwork(5,[rE_amb*ones(4,1);rI_amb],LIFSimuT*TimeFrac,dt*dtMltp);
