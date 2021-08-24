@@ -62,31 +62,38 @@ L4SIp = mean(L4SI./L4Iall);L4CIp = mean(L4CI./L4Iall);L4IIp = mean(L4II./L4Iall)
 LineFit = polyfit(L4Eall,L4Iall,1);
 YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of the range
 Bdry = floor(max(abs(YRange))/100)*100;
-%% Start parallel computation
-cluster = parpool([4 128]);
 L4ERange = floor(min(L4Eall)/100)*100:100:ceil(max(L4Eall)/100)*100;
 L4IDiffRange = -2*Bdry:50:2*Bdry;
 
-f_EnIOut = cell(length(L4ERange),length(L4IDiffRange));
-meanVs = cell(length(L4ERange),length(L4IDiffRange));
-SteadyIndicate = zeros(length(L4ERange),length(L4IDiffRange));
-FailureIndicate = zeros(length(L4ERange),length(L4IDiffRange));
-L4ERcrd = zeros(length(L4ERange),length(L4IDiffRange));
-L4IRcrd = zeros(length(L4ERange),length(L4IDiffRange));
-parfor L4EInd = 1:length(L4ERange)
-    for L4IDiffInd = 1:length(L4IDiffRange)
+%% Start parallel computation
+cluster = parpool([4 128]);
+
+a0 = length(L4ERange)*length(L4IDiffRange);
+f_EnIOut = cell(a0,1);
+meanVs = cell(a0,1);
+SteadyIndicate = zeros(a0,1);
+FailureIndicate = zeros(a0,1);
+L4ERcrd = zeros(a0,1);
+L4IRcrd = zeros(a0,1);
+
+parfor  LDEInd = 1:a0
+        L4EInd = ceil(LDEInd/length(L4IDiffRange));
+        L4IDiffInd = mod(LDEInd,length(L4IDiffRange));
+        if L4IDiffInd == 0
+            L4IDiffInd = length(L4IDiffRange);
+        end
         L4EU = L4ERange(L4EInd);
         L4IU = LineFit(1)*L4EU+LineFit(2) + L4IDiffRange(L4IDiffInd);
-        L4ERcrd(L4EInd,L4IDiffInd) = L4EU;
-        L4IRcrd(L4EInd,L4IDiffInd) = L4IU;
+        L4ERcrd(LDEInd) = L4EU;
+        L4IRcrd(LDEInd) = L4IU;
         %Distribute L4Input
         L4SEU = L4SEp*L4EU; L4CEU = L4CEp*L4EU; L4IEU = L4IEp*L4EU;
         L4SIU = L4SIp*L4IU; L4CIU = L4CIp*L4IU; L4IIU = L4IIp*L4IU;
         
         HyperPara = {'Traj',50,50,1,5000};
         tic
-       [f_EnIOut{L4EInd,L4IDiffInd},meanVs{L4EInd,L4IDiffInd},loop,...
-        SteadyIndicate(L4EInd,L4IDiffInd),FailureIndicate(L4EInd,L4IDiffInd)]...
+       [f_EnIOut{LDEInd},meanVs{LDEInd},~,...
+        SteadyIndicate(LDEInd),FailureIndicate(LDEInd)]...
            = MFpV_SinglePixel(...% MF Parameters                     
                      N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
@@ -97,8 +104,7 @@ parfor L4EInd = 1:length(L4ERange)
                      tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
                      rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,... %4
                      HyperPara);
-        toc
-    end    
+        toc   
 end
 
 % Save MFpV Data
