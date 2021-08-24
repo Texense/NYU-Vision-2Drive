@@ -29,12 +29,12 @@ parfor  PInd = 1:900
             FrIPixVec(PInd)];
         % Input
         NlgnS = N_Slgn; NlgnC = N_Clgn; NlgnI = N_Ilgn;
-        rL6E = (L6S_Pixel(PInd) + L6S_Pixel(PInd))/2; rL6I = L6I_Pixel(PInd);
+        rL6E = (L6S_Pixel(PInd) + L6C_Pixel(PInd))/2; rL6I = L6I_Pixel(PInd);
         lgn_SOnOff = [lambda_SOn_Pixel(PInd)/NlgnS;
-            lambda_SOff_Pixel(PInd)/NlgnS];
-        lgn_COnOff = [ lambda_COn_Pixel(PInd)/NlgnC;
-            lambda_COff_Pixel(PInd)/NlgnC];
-        lgn_I = lambda_I_Pixel/NlgnI;
+                     lambda_SOff_Pixel(PInd)/NlgnS];
+        lgn_COnOff = [lambda_COn_Pixel(PInd)/NlgnC;
+                     lambda_COff_Pixel(PInd)/NlgnC];
+        lgn_I =      lambda_I_Pixel/NlgnI;
         % L4 Input and parameters
         N_PreSynPix = [C_SS_Pixel_Us(PInd, PInd),C_CS_Pixel_Us(PInd, PInd),C_IS_Pixel_Us(PInd, PInd);
                        C_SC_Pixel_Us(PInd, PInd),C_CC_Pixel_Us(PInd, PInd),C_IC_Pixel_Us(PInd, PInd);
