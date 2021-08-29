@@ -15,6 +15,7 @@ cluster = parpool([4 128]);
 
 mVLIF = zeros(5,PixNum); FrLIF = zeros(5,PixNum);
 f_EnIOut = cell(PixNum,1);
+meanVs = cell(PixNum,1);
 SteadyIndicate = zeros(PixNum,1);
 FailureIndicate = zeros(PixNum,1);
 parfor  PInd = 1:900
@@ -71,7 +72,7 @@ parfor  PInd = 1:900
 
         HyperPara = {'Traj',50,50,1,5000};
         tic
-       [f_EnIOut{PInd},meanVs,loop,SteadyIndicate(PInd),FailureIndicate(PInd)]...
+       [f_EnIOut{PInd},meanVs{PInd},loop,SteadyIndicate(PInd),FailureIndicate(PInd)]...
            = MFpV_SinglePixel(...
 ...% MF Parameters                     
                      N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,... %3 
@@ -89,4 +90,4 @@ end
 CurrentFolder = pwd;
 SaveFolder = [CurrentFolder '/Figures/Demo082121/'];
 save([SaveFolder 'MFpVPix.mat'],...
-    'mVLIF','FrLIF','f_EnIOut','SteadyIndicate','FailureIndicate')   
+    'mVLIF','FrLIF','f_EnIOut','meanVs','SteadyIndicate','FailureIndicate')   
