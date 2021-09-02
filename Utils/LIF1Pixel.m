@@ -1,13 +1,13 @@
 % single cell simulation: to collect mean V (and firing rates)
 
-function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
-                                 S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                 S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                                 lgn_SOnOff,lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
-                                 tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
-                                 rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
-                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt) % No more Freq
-                               % Last two lines in case we have used current input...
+function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,... %8
+                                   S_EE,S_EI,S_IE,S_II,p_EEFail,...                             %5
+                                   S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...                %7 L6 Amb                                   
+                                   lgn_SOnOff,lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...%8
+                                   tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...%7
+                                   rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...                  % 4
+                                   gL_E,gL_I,Ve,Vi,LIFSimuT, dt, varargin)                      % 6+x  %No more Freq
+                                 % Last two lines in case we have used current input...
                                %% First check if L4 rates match neuron numbers
 if length(Fr_MFinv) == 5 % Son Con Soff Coff, I
     Fr_MFinv(Fr_MFinv<0) = 0;
@@ -16,6 +16,12 @@ if length(Fr_MFinv) == 5 % Son Con Soff Coff, I
     rI = Fr_MFinv(5); % f_EnI in s^-1, but here we use ms^-1
 else
     error('L4 Pix FRs dont match!')
+end
+
+if nargin > 45
+    RecdThre = varargin{1};
+else
+    RecdThre = eps;
 end
 %% PreSynaptic neuron numbers. External and internal (pixel)
 N_SSi = N_PreSynPix(1,1); N_CSi = N_PreSynPix(1,2); N_ISi = N_PreSynPix(1,3); %% REally?? Row/Col
@@ -111,6 +117,7 @@ for tInd = 1:length(tt)-1
     vRecord(:,FrameInd) = ov;
     if FrameInd == FrameNum
         vRecord(:,end) = [];
+        vRecord(vRecord < RecdThre & vRecord >0) = nan; %% NOTE: Excluding too low voltages
         mVs(:,RecordInd) = nanmean(vRecord,2);
     end
     % Compute meanV

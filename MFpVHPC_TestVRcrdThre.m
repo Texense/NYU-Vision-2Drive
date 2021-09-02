@@ -1,3 +1,5 @@
+
+function [] = MFpVHPC_TestVRcrdThre(vRcrdThre)
 CurrentFolder = pwd
 FigurePath = [CurrentFolder '/Figures'];
 addpath(CurrentFolder)
@@ -9,10 +11,19 @@ DataFolder = [CurrentFolder '/Figures/Demo082121/'];
 addpath(DataFolder)
 
 load('AllMFPixPara.mat')
+C_SS_Pixel_Us = load('AllMFPixPara.mat','C_SS_Pixel_Us');
+C_CS_Pixel_Us = load('AllMFPixPara.mat','C_CS_Pixel_Us');
+C_IS_Pixel_Us = load('AllMFPixPara.mat','C_IS_Pixel_Us');
+C_SC_Pixel_Us = load('AllMFPixPara.mat','C_SC_Pixel_Us');
+C_CC_Pixel_Us = load('AllMFPixPara.mat','C_CC_Pixel_Us');
+C_IC_Pixel_Us = load('AllMFPixPara.mat','C_IC_Pixel_Us');
+C_SI_Pixel_Us = load('AllMFPixPara.mat','C_SI_Pixel_Us');
+C_CI_Pixel_Us = load('AllMFPixPara.mat','C_CI_Pixel_Us');
+C_II_Pixel_Us = load('AllMFPixPara.mat','C_II_Pixel_Us');
 
 %% Start parallel computation
 cluster = parpool([4 128]);
-vRcrdThre = 0.05;
+%vRcrdThre = 0.05;
 
 mVLIF = zeros(5,PixNum); FrLIF = zeros(5,PixNum);
 f_EnIOut = cell(PixNum,1);
@@ -92,3 +103,5 @@ CurrentFolder = pwd;
 SaveFolder = [CurrentFolder '/Figures/Demo082721/'];
 save([SaveFolder 'MFpVPixVth' num2str(vRcrdThre) '.mat'],...
     'mVLIF','FrLIF','f_EnIOut','meanVs','SteadyIndicate','FailureIndicate')   
+
+end
