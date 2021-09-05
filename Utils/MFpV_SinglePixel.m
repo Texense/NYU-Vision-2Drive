@@ -66,6 +66,12 @@ if N_Hyp > 4 % Specify: LIF simulation timef_pre
 else
     LIFSimuT = 10*1e3;    % unit in ms    
 end
+
+if N_Hyp > 5 % Specify: Starting point of Recording
+    RecdThre = HyperPara{6};
+else
+    RecdThre = eps;    % unit in ms    
+end
 dt = 0.1;
 % initialize with a reasonable guess     
 mVSOn = 0.67; mVSOff = 0.57; 
@@ -96,7 +102,7 @@ while SteadyCounter<AveLoop %the formal ending condition
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
-                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt); % No more Freq                                   
+                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt, RecdThre); % No more Freq                                   
 %% NOW! consider the previous mVs if it already satisfies steady condition
 if loop>100
     mVIn = mean(meanVs(:,end-10+1:end)) * 0.9 + mVLIF*0.1;
@@ -261,7 +267,7 @@ function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, 
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
-                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt) % No more Freq
+                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt, RecdThre) % No more Freq
                                % Last two lines in case we have used current input...
                                %% First check if L4 rates match neuron numbers
 if length(Fr_MFinv) == 5 % Son Con Soff Coff, I
@@ -366,6 +372,7 @@ for tInd = 1:length(tt)-1
     vRecord(:,FrameInd) = ov;
     if FrameInd == FrameNum
         vRecord(:,end) = [];
+        vRecord(vRecord < RecdThre & vRecord >0) = nan; %% NOTE: Excluding too low voltages
         mVs(:,RecordInd) = nanmean(vRecord,2);
     end
     % Compute meanV
