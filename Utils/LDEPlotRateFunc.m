@@ -8,7 +8,7 @@
 %        CellCtgr: S C I
 % Output: LDEFrcell Fr function on grid L4EPlot,L4IPlot
 
-function [LDEFrcell] = LDEPlotRateFunc(L4EPlot,L4IPlot,FrLDE,a1,a2,CtgrName,ODCtgr,CellCtgr,varargin)
+function [LDEFrVec] = LDEPlotRateFunc(L4EPlot,L4IPlot,FrLDE,a1,a2,CtgrName,ODCtgr,CellCtgr,varargin)
 switch CellCtgr
     case 'S'
        CId1 = 1; CId2 = 3; 
@@ -42,4 +42,5 @@ view([0 90])
 xlabel('L4E'); ylabel('L4I');title([CellCtgr ' ' CtgrName{ODCtgr}])
 colorbar;
 
+LDEFrVec = reshape(LDEFrcell,a1*a2,1);
 end
