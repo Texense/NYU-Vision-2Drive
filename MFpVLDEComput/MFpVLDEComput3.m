@@ -64,7 +64,10 @@ YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of th
 Bdry = floor(max(abs(YRange))/100)*100;
 L4ERange = floor(min(L4Eall)/100)*100:100:ceil(max(L4Eall)/100)*100;
 L4IDiffRange = -2*Bdry:50:2*Bdry;
+% Get a much larger domain
 
+L4ERange = floor(min(L4Eall)/100/3)*100:200:ceil(max(L4Eall)*2/100)*100;
+L4IDiffRange = -8*Bdry:200:8*Bdry;
 %% Start parallel computation
 cluster = parpool([4 128]);
 
@@ -86,6 +89,10 @@ parfor  LDEInd = 1:a0
         L4IU = LineFit(1)*L4EU+LineFit(2) + L4IDiffRange(L4IDiffInd);
         L4ERcrd(LDEInd) = L4EU;
         L4IRcrd(LDEInd) = L4IU;
+        
+        if L4IU<0
+            continue
+        end
         %Distribute L4Input
         L4SEU = L4SEp*L4EU; L4CEU = L4CEp*L4EU; L4IEU = L4IEp*L4EU;
         L4SIU = L4SIp*L4IU; L4CIU = L4CIp*L4IU; L4IIU = L4IIp*L4IU;
@@ -109,6 +116,6 @@ end
 
 % Save MFpV Data
 CurrentFolder = pwd;
-SaveFolder = [CurrentFolder '/Figures/Demo082721/'];
+SaveFolder = [CurrentFolder '/Data/LDE_Precomputing/'];
 save([SaveFolder 'MFpV_LDE_' num2str(InputCtgr) '.mat'],...
     'f_EnIOut','meanVs','SteadyIndicate','FailureIndicate','L4ERcrd','L4IRcrd')   

@@ -27,20 +27,30 @@ else
     smth = true;
 end
 
+if nargin >9
+    Contour = varargin{2};
+else
+    Contour = false;
+end
+
 if smth
     LDEFrcell= smoothdata(...
                 smoothdata(reshape((FrLDE(:,CId1)+FrLDE(:,CId2))/2,a2,a1)),2);
 else
     LDEFrcell = reshape((FrLDE(:,CId1)+FrLDE(:,CId2))/2,a2,a1);
 end
+
 s = mesh(L4EPlot,L4IPlot,LDEFrcell,'FaceAlpha','0.4');
 s.FaceColor = 'flat';
 s.EdgeColor = 'none';
 hold on
-contour(L4EPlot,L4IPlot,LDEFrcell,'r',"ShowText",'on')
+if Contour
+   contour(L4EPlot,L4IPlot,LDEFrcell,'r',"ShowText",'on')
+end
 view([0 90])
 xlabel('L4E'); ylabel('L4I');title([CellCtgr ' ' CtgrName{ODCtgr}])
 colorbar;
+axis tight
 
 LDEFrVec = reshape(LDEFrcell,a1*a2,1);
 end
