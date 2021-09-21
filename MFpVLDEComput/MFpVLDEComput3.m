@@ -66,8 +66,8 @@ L4ERange = floor(min(L4Eall)/100)*100:100:ceil(max(L4Eall)/100)*100;
 L4IDiffRange = -2*Bdry:50:2*Bdry;
 % Get a much larger domain
 
-L4ERange = floor(min(L4Eall)/100/3)*100:200:ceil(max(L4Eall)*2/100)*100;
-L4IDiffRange = -8*Bdry:200:8*Bdry;
+L4ERange = 0:200:ceil(max(L4Eall)*2/100)*100;
+L4IDiffRange = -12*Bdry:200:12*Bdry;
 %% Start parallel computation
 cluster = parpool([4 128]);
 

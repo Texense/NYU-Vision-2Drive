@@ -30,7 +30,7 @@ end
 if nargin >9
     Contour = varargin{2};
 else
-    Contour = false;
+    Contour = true;
 end
 
 if smth
