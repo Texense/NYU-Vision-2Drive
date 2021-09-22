@@ -9,4 +9,5 @@ colorbar
 if nargin > 4
     title(varargin{1})
 end
+axis square
 end
