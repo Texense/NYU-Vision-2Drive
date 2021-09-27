@@ -6,6 +6,7 @@
 % C_SS_Pixel_Us
 
 % Zhuo-Cheng Xiao 09/16/2021
+% New Version: Want to expand from 3HC to arbitrary # of HC
 
 function C_SS_mean = AveSpatKer(C_SS_Pixel_Us,N_HC,NPixX,NPixY)
 %% Check if C_SS is an eligible matrix
