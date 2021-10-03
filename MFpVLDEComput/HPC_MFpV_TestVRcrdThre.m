@@ -2,14 +2,19 @@
 %                  2. "Delay", then change recording time: ms for unit
 % both for testmod
 
-function [] = HPC_MFpV_TestVRcrdThre(testmod,testVal)
+function [] = HPC_MFpV_TestVRcrdThre(test,testVal)
+if test==0
+    testmod = 'thre'
+elseif test==1
+    testmod = 'delay'
+end
 CurrentFolder = pwd
 addpath(CurrentFolder)
 addpath([CurrentFolder '/Utils'])
 addpath([CurrentFolder '/Data'])
-SaveFolder = [CurrentFolder '/Figures/Demo082721/'];
-addpath(SaveFolder)
-DataFolder = [CurrentFolder '/Figures/Demo082121/'];
+% SaveFolder = [CurrentFolder '/Figures/Demo082721/'];
+% addpath(SaveFolder)
+DataFolder = [CurrentFolder '/Data/LDE_Precomputing/'];
 addpath(DataFolder)
 
 S = load('AllMFPixPara.mat');
@@ -146,7 +151,7 @@ parfor  PInd = 1:900
     
 end
 CurrentFolder = pwd;
-SaveFolder = [CurrentFolder '/Figures/Demo082721/'];
+SaveFolder = [CurrentFolder '/Data/LDE_Precomputing/'];
 save([SaveFolder 'MFpVPix' testmod num2str(testVal) '.mat'],...
       'mVLIF','FrLIF','f_EnIOut','meanVs','SteadyIndicate','FailureIndicate')   
 
