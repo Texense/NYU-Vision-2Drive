@@ -389,7 +389,7 @@ for tInd = 1:length(tt)-1
         vRecord(vRecord < RecdThre & vRecord >0) = nan; %% NOTE: Excluding too low voltages
         % or recording delay
         GridDly = floor(RecdDely/dt);
-        for cellInd = 1:5
+        for cellInd = 3:5
             Vt = vRecord(cellInd,:);
             GridRef = find(isnan(Vt));
             if ~isempty(GridRef) && GridDly>0 % Only do more nan if spikes and nontrivial dly
