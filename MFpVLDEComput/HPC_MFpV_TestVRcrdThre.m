@@ -1,5 +1,8 @@
+% Two choices here 1. "Thre", then change recoding threshold: 0-1
+%                  2. "Delay", then change recording time: ms for unit
+% both for testmod
 
-function [] = MFpVHPC_TestVRcrdThre(vRcrdThre)
+function [] = HPC_MFpV_TestVRcrdThre(testmod,testVal)
 CurrentFolder = pwd
 addpath(CurrentFolder)
 addpath([CurrentFolder '/Utils'])
@@ -115,17 +118,17 @@ parfor  PInd = 1:900
               - C_IS_Pixel_Us(PInd,PInd) * FrSPixVec(PInd) - C_IC_Pixel_Us(PInd,PInd) * FrCPixVec(PInd);
         L4II =  C_II_Pixel_Us(PInd,:) *    FrIPixVec       - C_II_Pixel_Us(PInd,PInd) * FrIPixVec(PInd);
         
-        LIFSimuT = 10000;
-        Fr_MFinv = f_pre;
-        [mVLIF(:,PInd),FrLIF(:,PInd)] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
-                                                  S_EE, S_EI, S_IE,S_II,p_EEFail,...
-                                                  S_EL6,S_IL6,rL6E,rL6I,S_amb,  rE_amb,rI_amb,...%7 L6 Amb                                   
-                                                  lgn_SOnOff,lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
-                                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
-                                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
-                                                  gL_E,gL_I,Ve,Vi,LIFSimuT, dt, vRcrdThre);
+%         LIFSimuT = 10000;
+%         Fr_MFinv = f_pre;
+%         [mVLIF(:,PInd),FrLIF(:,PInd)] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+%                                                   S_EE, S_EI, S_IE,S_II,p_EEFail,...
+%                                                   S_EL6,S_IL6,rL6E,rL6I,S_amb,  rE_amb,rI_amb,...%7 L6 Amb                                   
+%                                                   lgn_SOnOff,lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
+%                                                   tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
+%                                                   rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
+%                                                   gL_E,gL_I,Ve,Vi,LIFSimuT, dt, vRcrdThre);
 
-        HyperPara = {'Traj',50,50,1,5000,vRcrdThre};
+        HyperPara = {'Traj',50,50,1,5000,testmod,testVal};
         tic
        [f_EnIOut{PInd},meanVs{PInd},loop,SteadyIndicate(PInd),FailureIndicate(PInd)]...
            = MFpV_SinglePixel(...
@@ -144,7 +147,7 @@ parfor  PInd = 1:900
 end
 CurrentFolder = pwd;
 SaveFolder = [CurrentFolder '/Figures/Demo082721/'];
-save([SaveFolder 'MFpVPixVth' num2str(vRcrdThre) '.mat'],...
+save([SaveFolder 'MFpVPix' testmod num2str(testVal) '.mat'],...
       'mVLIF','FrLIF','f_EnIOut','meanVs','SteadyIndicate','FailureIndicate')   
 
 end

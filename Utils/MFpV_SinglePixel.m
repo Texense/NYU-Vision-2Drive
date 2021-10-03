@@ -22,6 +22,9 @@
 %                            3rd: Max Iteration before converged
 %                            4th: Stepsize h
 %                            5th: LIF simulation time
+%                            6th an 7th: testmode and test value: threshold
+%                            or delay time
+%                            
 % Output:f_EnI               Estimation of firing rates, E and I; A sequences
 %        meanVs              mean V of E and I
 %        loop                Number of loops
@@ -68,9 +71,19 @@ else
 end
 
 if N_Hyp > 5 % Specify: Starting point of Recording
-    RecdThre = HyperPara{6};
+    if strcmpi(HyperPara{6},'thre')
+        RecdThre = HyperPara{7};
+        RecdDely = 0;
+    elseif strcmpi(HyperPara{6},'delay')
+        RecdThre = eps;
+        RecdDely = HyperPara{7};
+    else
+        disp('***Wrong test mode')
+        return
+    end
 else
-    RecdThre = eps;    % unit in ms    
+    RecdThre = eps;    % unit in ms  
+    RecdDely = 0;
 end
 dt = 0.1;
 % initialize with a reasonable guess     
@@ -102,7 +115,7 @@ while SteadyCounter<AveLoop %the formal ending condition
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
-                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt, RecdThre); % No more Freq                                   
+                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt, RecdThre,RecdDely); % No more Freq                                   
 %% NOW! consider the previous mVs if it already satisfies steady condition
 if loop>100
     mVIn = mean(meanVs(:,end-10+1:end)) * 0.9 + mVLIF*0.1;
@@ -139,7 +152,7 @@ else
     SteadyCounter = SteadyCounter+1;
 end
 
-if (loop>100 | SteadyIndicate) & Suspicious
+if (loop>100 || SteadyIndicate) && Suspicious
     FailureIndicate = 1;
 end
 
@@ -267,7 +280,7 @@ function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, 
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
-                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt, RecdThre) % No more Freq
+                                 gL_E,gL_I,Ve,Vi,LIFSimuT, dt, RecdThre,RecdDely) % No more Freq
                                % Last two lines in case we have used current input...
                                %% First check if L4 rates match neuron numbers
 if length(Fr_MFinv) == 5 % Son Con Soff Coff, I
@@ -371,8 +384,19 @@ for tInd = 1:length(tt)-1
     ov(ov>=1) = nan;
     vRecord(:,FrameInd) = ov;
     if FrameInd == FrameNum
+        % either recording thresold
         vRecord(:,end) = [];
         vRecord(vRecord < RecdThre & vRecord >0) = nan; %% NOTE: Excluding too low voltages
+        % or recording delay
+        GridDly = floor(RecdDely/dt);
+        for cellInd = 1:5
+            Vt = vRecord(cellInd,:);
+            GridRef = find(isnan(Vt));
+            if ~isempty(GridRef) && GridDly>0 % Only do more nan if spikes and nontrivial dly
+                Vt(unique(reshape(GridRef + (0: GridDly)',1,length(GridRef)*(GridDly+1)))) = nan;
+            end
+            vRecord(cellInd,:) = Vt;
+        end
         mVs(:,RecordInd) = nanmean(vRecord,2);
     end
     % Compute meanV
