@@ -338,7 +338,7 @@ KerNMDA = KerNMDA / (sum(KerNMDA)*dt);
 KerGABA = KerGABA / (sum(KerGABA)*dt);
 % Incorporate L4 and other input
 ampaInp = single([S_Elgn * lgnPix_Events(1:4,:);            S_Ilgn * lgnPix_Events(5,:)]...
-               + [S_amb  * AmbPix_Events ]... % S_amb identical for E and I
+               +  S_amb  * AmbPix_Events ... % S_amb identical for E and I
                + [S_EL6  * L6Pix_Events(1:4,:) * rhoE_ampa; S_IL6  * L6Pix_Events(5,:) * rhoI_ampa]...
                + [S_EE * L4Pix_EventsEU(1:4,:) * rhoE_ampa; S_IE * L4Pix_EventsEU(5,:) * rhoI_ampa]);
 nmdaInp = single([S_EL6  * L6Pix_Events(1:4,:) * rhoE_nmda; S_IL6  * L6Pix_Events(5,:) * rhoI_nmda]...
@@ -384,14 +384,14 @@ for tInd = 1:length(tt)-1
     ov(ov>=1) = nan;
     vRecord(:,FrameInd) = ov;
     if FrameInd == FrameNum
-        % either recording thresold
-        vRecord(:,end) = [];
-        vRecord(vRecord < RecdThre & vRecord >0) = nan; %% NOTE: Excluding too low voltages
-        % or recording delay
+        vRecord(:,end) = [];  
         GridDly = floor(RecdDely/dt);
         for cellInd = 3:5
+            % either recording thresold
             Vt = vRecord(cellInd,:);
+            Vt(Vt< RecdThre & Vt >0) = nan; 
             GridRef = find(isnan(Vt));
+            % or recording delay
             if ~isempty(GridRef) && GridDly>0 % Only do more nan if spikes and nontrivial dly
                 Vt(unique(reshape(GridRef + (0: GridDly)',1,length(GridRef)*(GridDly+1)))) = nan;
             end
