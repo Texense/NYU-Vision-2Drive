@@ -75,14 +75,14 @@ if N_Hyp > 5 % Specify: Starting point of Recording
         RecdThre = HyperPara{7};
         RecdDely = 0;
     elseif strcmpi(HyperPara{6},'delay')
-        RecdThre = eps;
+        RecdThre = 0;
         RecdDely = HyperPara{7};
     else
         disp('***Wrong test mode')
         return
     end
 else
-    RecdThre = eps;    % unit in ms  
+    RecdThre = 0;    % unit in ms  
     RecdDely = 0;
 end
 dt = 0.1;
@@ -247,7 +247,7 @@ ExtV = [ExtSOn;
 
 
 Fr_MFinv = (eye(5)-RefM*ConnMat) \ (RefM * ( ExtV + LeakV)); 
-Fr_MFinv(Fr_MFinv<0) = 0;
+Fr_MFinv(Fr_MFinv<0) = 2.5;
 % FrPreUseDim = Fr_MFinv<0; 
 % FrPreUse = FrLIF(Fr_MFinv<0);
 % if isempty(FrPreUse)
@@ -339,9 +339,9 @@ KerGABA = KerGABA / (sum(KerGABA)*dt);
 % Incorporate L4 and other input
 ampaInp = single([S_Elgn * lgnPix_Events(1:4,:);            S_Ilgn * lgnPix_Events(5,:)]...
                +  S_amb  * AmbPix_Events ... % S_amb identical for E and I
-               + [S_EL6  * L6Pix_Events(1:4,:) * rhoE_ampa; S_IL6  * L6Pix_Events(5,:) * rhoI_ampa]...
+               + [S_EL6  * L6Pix_Events(1:4,:) * rhoE_ampa; S_IL6 * L6Pix_Events(5,:) * rhoI_ampa]...
                + [S_EE * L4Pix_EventsEU(1:4,:) * rhoE_ampa; S_IE * L4Pix_EventsEU(5,:) * rhoI_ampa]);
-nmdaInp = single([S_EL6  * L6Pix_Events(1:4,:) * rhoE_nmda; S_IL6  * L6Pix_Events(5,:) * rhoI_nmda]...
+nmdaInp = single([S_EL6  * L6Pix_Events(1:4,:) * rhoE_nmda; S_IL6 * L6Pix_Events(5,:) * rhoI_nmda]...
                + [S_EE * L4Pix_EventsEU(1:4,:) * rhoE_nmda; S_IE * L4Pix_EventsEU(5,:) * rhoI_nmda]);
 gabaInp = single([S_EI * L4Pix_EventsIU(1:4,:);             S_II * L4Pix_EventsIU(5,:)] );
 %% Precompute All Conductances: Speed up by ifft/fft
@@ -388,8 +388,10 @@ for tInd = 1:length(tt)-1
         GridDly = floor(RecdDely/dt);
         for cellInd = 3:5
             % either recording thresold
+            if RecdThre>0
             Vt = vRecord(cellInd,:);
             Vt(Vt< RecdThre & Vt >0) = nan; 
+            end
             GridRef = find(isnan(Vt));
             % or recording delay
             if ~isempty(GridRef) && GridDly>0 % Only do more nan if spikes and nontrivial dly
@@ -410,9 +412,4 @@ mVUseInd = (1:size(mVs,2))/size(mVs,2) > 1-SampleProp;
 mVLIF = nanmean(mVs(:,mVUseInd),2);
 FrLIF = SpLIF/(T*SampleProp/1000);
 
-% figure
-% subplot 221; plot(tt, GAMPA(3,1:length(tt))); xlim([T*9/10,T]); xlabel('T(ms)'); ylabel('GAMPA')
-% subplot 222; plot(tt, GNMDA(3,1:length(tt))); xlim([T*9/10,T]); xlabel('T(ms)'); ylabel('GNMDA')
-% subplot 223; plot(tt, GGABA(3,1:length(tt))); xlim([T*9/10,T]); xlabel('T(ms)'); ylabel('GGABA')
-% subplot 224; plot(linspace(0,), vRecord(3,:)); xlim([T*9/10,T]); xlabel('T(ms)'); ylabel('V')
 end
