@@ -247,7 +247,7 @@ ExtV = [ExtSOn;
 
 
 Fr_MFinv = (eye(5)-RefM*ConnMat) \ (RefM * ( ExtV + LeakV)); 
-Fr_MFinv(Fr_MFinv<0) = 2.5;
+Fr_MFinv(Fr_MFinv<0) = 3;
 % FrPreUseDim = Fr_MFinv<0; 
 % FrPreUse = FrLIF(Fr_MFinv<0);
 % if isempty(FrPreUse)
@@ -386,7 +386,7 @@ for tInd = 1:length(tt)-1
     if FrameInd == FrameNum
         vRecord(:,end) = [];  
         GridDly = floor(RecdDely/dt);
-        for cellInd = 3:5
+        for cellInd = [2,4,5]
             % either recording thresold
             if RecdThre>0
             Vt = vRecord(cellInd,:);

@@ -96,7 +96,7 @@ parfor  LDEInd = 1:a0
         L4SEU = L4SEp*L4EU; L4CEU = L4CEp*L4EU; L4IEU = L4IEp*L4EU;
         L4SIU = L4SIp*L4IU; L4CIU = L4CIp*L4IU; L4IIU = L4IIp*L4IU;
         
-        HyperPara = {'Traj',50,50,1,5000};
+        HyperPara = {'Traj',50,50,1,5000,'thre',0.2};
         tic
        [f_EnIOut{LDEInd},meanVs{LDEInd},~,...
         SteadyIndicate(LDEInd),FailureIndicate(LDEInd)]...
@@ -116,5 +116,5 @@ end
 % Save MFpV Data
 CurrentFolder = pwd;
 SaveFolder = [CurrentFolder '/Data/LDE_Precomputing/'];
-save([SaveFolder 'MFpV_LDE_' num2str(InputCtgr) '.mat'],...
+save([SaveFolder 'MFpV_LDE_thre' num2str(InputCtgr) '.mat'],...
     'f_EnIOut','meanVs','SteadyIndicate','FailureIndicate','L4ERcrd','L4IRcrd')   
