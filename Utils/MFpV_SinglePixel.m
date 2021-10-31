@@ -9,7 +9,7 @@
 %        Assume L4SE/CE/IE are proportional to presynaptic neuron numbers
 %        S_EE,S_EI,S_IE,S_II      synaptic strength
 %        S_EL6,S_IL6,rE_L6,rI_L6, L6 Input, All Scalar
-%        S_amb,rE_amb,rI_amb      amb Input, All Scalar
+%        S_amb,rS_amb,rC_amb,rI_amb      amb Input, All Scalar
 %        p_EEFail                 E-to-E Synaptic failure prob
 %        lgn_S/COnOff,lgn_I       LGN input rate. Phase OnOff for E (2*1 vec) 
 %        S_Elgn S_Ilgn            LGN strength of drives
@@ -35,9 +35,9 @@
 function [f_EnIOut,meanVs,loop,SteadyIndicate,FailureIndicate]...
            = MFpV_SinglePixel(...
 ...% MF Parameters                     
-                     N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,... %3 
+                     N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
-                     S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                     S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                      lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
                      gL_E,gL_I,Ve,Vi, tau_ref,... %5
 ...% Below are LIF details
@@ -92,9 +92,9 @@ mVCOn = 0.67; mVCOff = 0.57;
 mVI = 0.77; 
 f_pre = zeros(5,1);
 meanVs = [mVSOn;mVSOff;mVCOn;mVCOff;mVI];
-f_SCIIni = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+f_SCIIni = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                        S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                       S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                       S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                        lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
                        gL_E,gL_I,Ve,Vi, tau_ref, meanVs, f_pre,f_pre);
 f_EnIOut = f_SCIIni;
@@ -109,9 +109,9 @@ FailureIndicate = 0;
 Suspicious = false;
 while SteadyCounter<AveLoop %the formal ending condition
 % simulate one neuron with input                             
-[mVLIF,FrLIF] = LIF1Pixel(f_EnIOut(:,end), N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+[mVLIF,FrLIF] = LIF1Pixel(f_EnIOut(:,end), N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                                  S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                 S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                                 S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
@@ -124,11 +124,11 @@ else
 end
 
 % estimate with ref now
-f_EnI0 = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
-                             S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                             S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
-                             lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
-                             gL_E,gL_I,Ve,Vi, tau_ref, mVIn, f_SCIIni, FrLIF); 
+f_EnI0 = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
+                     S_EE,S_EI,S_IE,S_II,p_EEFail,...
+                     S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
+                     lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
+                     gL_E,gL_I,Ve,Vi, tau_ref, mVIn, f_SCIIni, FrLIF); 
                                
                                
 Suspicious = (min(f_EnI0)<-5);
@@ -178,7 +178,7 @@ end
 %        S_EL6,S_IL6,rE_L6,rI_L6 L6 Input
 %        p_EEFail            Synaptic failure prob
 %        lambda_E lambda_I   LGN input
-%        rE_amb rI_amb       Ambient input
+%        rS_amb,rC_amb rI_amb       Ambient input
 %        S_Elgn S_Ilgn S_amb Synaptic strength of drives
 %        gL_E,gL_I           Leaky time constants
 %        Ve,Vi               Reversak potentials
@@ -187,9 +187,9 @@ end
 %        f_pre               from previous
 % Output:Fr_MFinv            Estimation of firing rates, Son, Soff, Con, Coff, I
 
-function Fr_MFinv = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+function Fr_MFinv = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                              S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                             S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                             S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                              lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
                              gL_E,gL_I,Ve,Vi, tau_ref, meanVs, f_pre, FrLIF)                             
 %% PreSynaptic neuron numbers. External and internal (pixel)
@@ -229,16 +229,16 @@ LeakV = [LeakSOn;
          LeakCOff;
          LeakI];
 % Ext
-ExtSOn  = (lgn_SOnOff(1)*NlgnS*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVSOn *1e3 ...
-        + (L4SI*S_EI)*iVSOn + L4SE*S_EE*eVSOn*(1-p_EEFail); 
-ExtCOn  = (lgn_COnOff(1)*NlgnC*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVCOn *1e3 ...
-        + (L4CI*S_EI)*iVCOn + L4CE*S_EE*eVCOn*(1-p_EEFail);
-ExtSOff = (lgn_SOnOff(2)*NlgnS*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVSOff *1e3...
-        + (L4SI*S_EI)*iVSOn + L4SE*S_EE*eVSOff*(1-p_EEFail);
-ExtCOff = (lgn_COnOff(2)*NlgnC*S_Elgn + rE_amb*S_amb + rL6E*S_EL6)*eVCOff *1e3...
-        + (L4CI*S_EI)*iVCOn + L4CE*S_EE*eVCOff*(1-p_EEFail);
-ExtI =    (lgn_I        *NlgnI*S_Ilgn + rI_amb*S_amb + rL6I*S_IL6)*eVI    *1e3...
-        + (L4II*S_II)*iVI   + L4IE*S_IE*eVI;
+ExtSOn  = (lgn_SOnOff(1)*NlgnS*S_Elgn + rS_amb*S_amb + rL6SU*S_EL6)*eVSOn *1e3 ...
+        + (L4SIU*S_EI)*iVSOn + L4SE*S_EE*eVSOn*(1-p_EEFail); 
+ExtCOn  = (lgn_COnOff(1)*NlgnC*S_Elgn + rC_amb*S_amb + rL6CU*S_EL6)*eVCOn *1e3 ...
+        + (L4CIU*S_EI)*iVCOn + L4CEU*S_EE*eVCOn*(1-p_EEFail);
+ExtSOff = (lgn_SOnOff(2)*NlgnS*S_Elgn + rS_amb*S_amb + rL6SU*S_EL6)*eVSOff *1e3...
+        + (L4SIU*S_EI)*iVSOn + L4SE*S_EE*eVSOff*(1-p_EEFail);
+ExtCOff = (lgn_COnOff(2)*NlgnC*S_Elgn + rC_amb*S_amb + rL6CU*S_EL6)*eVCOff *1e3...
+        + (L4CIU*S_EI)*iVCOn + L4CEU*S_EE*eVCOff*(1-p_EEFail);
+ExtI =    (lgn_I        *NlgnI*S_Ilgn + rI_amb*S_amb + rL6IU*S_IL6)*eVI    *1e3...
+        + (L4IIU*S_II)*iVI   + L4IEU*S_IE*eVI;
 ExtV = [ExtSOn;
         ExtCOn;
         ExtSOff;
@@ -274,9 +274,9 @@ end
 
 % single cell simulation: to collect mean V (and firing rates)
 
-function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,...
+function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                                  S_EE,S_EI,S_IE,S_II,p_EEFail,...
-                                 S_EL6,S_IL6,rL6E,rL6I,S_amb,rE_amb,rI_amb,...%7 L6 Amb                                   
+                                 S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
                                  tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,tau_ref,...
                                  rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,...
@@ -303,13 +303,13 @@ DroptInd = floor(length(tt)*(1-SampleProp));
 TimeFrac = 1; dtMltp = 1;
 % L4 input determination: Assume all Poisson
 % Can be optimized in the future, but let's make var correct for now
-L4SEAll = (L4SE + rS*N_SSi + rC*N_SCi)*(1-p_EEFail); L4SIAll = L4SI + rI*N_SIi; %fail multiply here. NOWHERE ELSE!
-L4CEAll = (L4CE + rS*N_CSi + rC*N_CCi)*(1-p_EEFail); L4CIAll = L4CI + rI*N_CIi;
-L4IEAll =  L4IE + rS*N_ISi + rC*N_ICi;               L4IIAll = L4II + rI*N_IIi;
-L4EInputNow = [L4SEAll; L4CEAll; L4SEAll; L4CEAll; L4IEAll]/1000; 
-L4IInputNow = [L4SIAll; L4CIAll; L4SIAll; L4CIAll; L4IIAll]/1000; 
+L4SEAll = (L4SE + rS*N_SSi + rC*N_SCi)*(1-p_EEFail); L4SIUAll = L4SIU + rI*N_SIi; %fail multiply here. NOWHERE ELSE!
+L4CEUAll = (L4CEU + rS*N_CSi + rC*N_CCi)*(1-p_EEFail); L4CIUAll = L4CIU + rI*N_CIi;
+L4IEUAll =  L4IEU + rS*N_ISi + rC*N_ICi;               L4IIUAll = L4IIU + rI*N_IIi;
+L4EInputNow = [L4SEAll; L4CEUAll; L4SEAll; L4CEUAll; L4IEUAll]/1000; 
+L4IIUnputNow = [L4SIUAll; L4CIUAll; L4SIUAll; L4CIUAll; L4IIUAll]/1000; 
 L4Pix_EventsEU = PoissonInputForNetwork(5,L4EInputNow,LIFSimuT*TimeFrac,dt*dtMltp); % E to everyone
-L4Pix_EventsIU = PoissonInputForNetwork(5,L4IInputNow,LIFSimuT*TimeFrac,dt*dtMltp); % I to everyone 
+L4Pix_EventsIU = PoissonInputForNetwork(5,L4IIUnputNow,LIFSimuT*TimeFrac,dt*dtMltp); % I to everyone 
 % LGN, amb, L6
 LgnInputNow = [lgn_SOnOff(1)*NlgnS; 
                lgn_COnOff(1)*NlgnC;
@@ -317,8 +317,8 @@ LgnInputNow = [lgn_SOnOff(1)*NlgnS;
                lgn_COnOff(2)*NlgnC;
                lgn_I        *NlgnI];
 lgnPix_Events = PoissonInputForNetwork(5,LgnInputNow,LIFSimuT*TimeFrac,dt*dtMltp);
-AmbPix_Events = PoissonInputForNetwork(5,[rE_amb*ones(4,1);rI_amb],LIFSimuT*TimeFrac,dt*dtMltp);
-L6Pix_Events  = PoissonInputForNetwork(5,[rL6E*ones(4,1);    rL6I],LIFSimuT*TimeFrac,dt*dtMltp);
+AmbPix_Events = PoissonInputForNetwork(5,[rS_amb;rC_amb;rS_amb;rC_amb;rI_amb],LIFSimuT*TimeFrac,dt*dtMltp);
+L6Pix_Events  = PoissonInputForNetwork(5,[rL6SU; rL6CU; rL6SU; rL6CU; rL6IU], LIFSimuT*TimeFrac,dt*dtMltp);
 % Leakage
 gL = [gL_E*ones(4,1); gL_I*ones(1)];
 % Initialize records % sumV = zeros(5, 1);% VNanCount = zeros(5, 1);
