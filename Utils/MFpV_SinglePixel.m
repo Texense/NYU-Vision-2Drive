@@ -35,7 +35,7 @@
 function [f_EnIOut,meanVs,loop,SteadyIndicate,FailureIndicate]...
            = MFpV_SinglePixel(...
 ...% MF Parameters                     
-                     N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3 
+                     N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
                      S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                      lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
@@ -90,9 +90,9 @@ dt = 0.1;
 mVSOn = 0.67; mVSOff = 0.57; 
 mVCOn = 0.67; mVCOff = 0.57;
 mVI = 0.77; 
-f_pre = zeros(5,1);
+f_pre = ones(5,1);
 meanVs = [mVSOn;mVSOff;mVCOn;mVCOff;mVI];
-f_SCIIni = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
+f_SCIIni = MF_SCI_1Pix(N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                        S_EE,S_EI,S_IE,S_II,p_EEFail,...
                        S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                        lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... %7
@@ -109,7 +109,7 @@ FailureIndicate = 0;
 Suspicious = false;
 while SteadyCounter<AveLoop %the formal ending condition
 % simulate one neuron with input                             
-[mVLIF,FrLIF] = LIF1Pixel(f_EnIOut(:,end), N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
+[mVLIF,FrLIF] = LIF1Pixel(f_EnIOut(:,end), N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                                  S_EE,S_EI,S_IE,S_II,p_EEFail,...
                                  S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
@@ -124,7 +124,7 @@ else
 end
 
 % estimate with ref now
-f_EnI0 = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
+f_EnI0 = MF_SCI_1Pix(N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                      S_EE,S_EI,S_IE,S_II,p_EEFail,...
                      S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                      lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
@@ -132,7 +132,7 @@ f_EnI0 = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                                
                                
 Suspicious = (min(f_EnI0)<-5);
-                               
+Fail = sum(isnan(f_EnI0))>0;                               
 %f_EnI0 = max([f_EnI0,[0;0]],[],2);
 %f_EnI0 = abs(f_EnI0);                                     
 %% The new input!
@@ -145,19 +145,24 @@ meanVs = [meanVs, mVIn];
 
 if ~SteadyIndicate
   if loop >= TestPoints && mean(std(f_EnIOut(:,end-TestPoints+1:end),0,2) ...
-                            ./mean(f_EnIOut(:,end-TestPoints+1:end),2))<0.07 % std/mean for the last 10 samples
+                            ./mean(f_EnIOut(:,end-TestPoints+1:end),2))<0.1 % std/mean for the last 10 samples
      SteadyIndicate = true;
   end  
 else 
     SteadyCounter = SteadyCounter+1;
 end
 
-if (loop>100 || SteadyIndicate) && Suspicious
+if ((loop>100 || SteadyIndicate) && Suspicious) 
     FailureIndicate = 1;
 end
 
 % break out if not reaching convergence after 100 iterations. Tbis number
 % should be larger than end condition of SteadyCounter
+if Fail
+    disp('NaN appears. Break')
+    FailureIndicate = 1;
+    break    
+end
 if (~SteadyIndicate && loop >= StopLoop) 
     disp('Firing rates unconverged')
     break
@@ -187,7 +192,7 @@ end
 %        f_pre               from previous
 % Output:Fr_MFinv            Estimation of firing rates, Son, Soff, Con, Coff, I
 
-function Fr_MFinv = MF_SCI_1Pix(N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
+function Fr_MFinv = MF_SCI_1Pix(N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                              S_EE,S_EI,S_IE,S_II,p_EEFail,...
                              S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                              lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,... % lgn
@@ -199,7 +204,9 @@ N_SIi = N_PreSynPix(3,1); N_CIi = N_PreSynPix(3,2); N_IIi = N_PreSynPix(3,3);
 
 % Downplay current by a ref factor
 % Use LIF firing rates if negative value emerges
-f_preU = f_pre; f_preU(f_pre<0) = FrLIF(f_pre<0);
+f_preU = f_pre; 
+f_preU(f_pre<0) = FrLIF(f_pre<0);
+f_preU(f_preU>200) = 200; % give a maximum
 RefM = diag(1-f_preU*tau_ref/1000);
 % Mats
 MatSS = (S_EE*(1-p_EEFail))*N_SSi; MatCS = (S_EE*(1-p_EEFail))*N_CSi; MatIS = S_IE * N_ISi;
@@ -230,11 +237,11 @@ LeakV = [LeakSOn;
          LeakI];
 % Ext
 ExtSOn  = (lgn_SOnOff(1)*NlgnS*S_Elgn + rS_amb*S_amb + rL6SU*S_EL6)*eVSOn *1e3 ...
-        + (L4SIU*S_EI)*iVSOn + L4SE*S_EE*eVSOn*(1-p_EEFail); 
+        + (L4SIU*S_EI)*iVSOn + L4SEU*S_EE*eVSOn*(1-p_EEFail); 
 ExtCOn  = (lgn_COnOff(1)*NlgnC*S_Elgn + rC_amb*S_amb + rL6CU*S_EL6)*eVCOn *1e3 ...
         + (L4CIU*S_EI)*iVCOn + L4CEU*S_EE*eVCOn*(1-p_EEFail);
 ExtSOff = (lgn_SOnOff(2)*NlgnS*S_Elgn + rS_amb*S_amb + rL6SU*S_EL6)*eVSOff *1e3...
-        + (L4SIU*S_EI)*iVSOn + L4SE*S_EE*eVSOff*(1-p_EEFail);
+        + (L4SIU*S_EI)*iVSOn + L4SEU*S_EE*eVSOff*(1-p_EEFail);
 ExtCOff = (lgn_COnOff(2)*NlgnC*S_Elgn + rC_amb*S_amb + rL6CU*S_EL6)*eVCOff *1e3...
         + (L4CIU*S_EI)*iVCOn + L4CEU*S_EE*eVCOff*(1-p_EEFail);
 ExtI =    (lgn_I        *NlgnI*S_Ilgn + rI_amb*S_amb + rL6IU*S_IL6)*eVI    *1e3...
@@ -244,8 +251,7 @@ ExtV = [ExtSOn;
         ExtSOff;
         ExtCOff
         ExtI];
-
-
+    
 Fr_MFinv = (eye(5)-RefM*ConnMat) \ (RefM * ( ExtV + LeakV)); 
 Fr_MFinv(Fr_MFinv<0) = 3;
 % FrPreUseDim = Fr_MFinv<0; 
@@ -274,7 +280,7 @@ end
 
 % single cell simulation: to collect mean V (and firing rates)
 
-function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
+function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                                  S_EE,S_EI,S_IE,S_II,p_EEFail,...
                                  S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
                                  lgn_SOnOff, lgn_COnOff,lgn_I,NlgnS,NlgnC,NlgnI, S_Elgn,S_Ilgn,...
@@ -284,7 +290,7 @@ function [mVLIF,FrLIF] = LIF1Pixel(Fr_MFinv, N_PreSynPix, L4SE,L4SIU, L4CEU,L4CI
                                % Last two lines in case we have used current input...
                                %% First check if L4 rates match neuron numbers
 if length(Fr_MFinv) == 5 % Son Con Soff Coff, I
-    Fr_MFinv(Fr_MFinv<0) = 0;
+    Fr_MFinv(Fr_MFinv<0) = eps;
     rS = (Fr_MFinv(1) + Fr_MFinv(3))/2; 
     rC = (Fr_MFinv(2) + Fr_MFinv(4))/2; 
     rI = Fr_MFinv(5); % f_EnI in s^-1, but here we use ms^-1
@@ -303,10 +309,10 @@ DroptInd = floor(length(tt)*(1-SampleProp));
 TimeFrac = 1; dtMltp = 1;
 % L4 input determination: Assume all Poisson
 % Can be optimized in the future, but let's make var correct for now
-L4SEAll = (L4SE + rS*N_SSi + rC*N_SCi)*(1-p_EEFail); L4SIUAll = L4SIU + rI*N_SIi; %fail multiply here. NOWHERE ELSE!
+L4SEUAll = (L4SEU + rS*N_SSi + rC*N_SCi)*(1-p_EEFail); L4SIUAll = L4SIU + rI*N_SIi; %fail multiply here. NOWHERE ELSE!
 L4CEUAll = (L4CEU + rS*N_CSi + rC*N_CCi)*(1-p_EEFail); L4CIUAll = L4CIU + rI*N_CIi;
 L4IEUAll =  L4IEU + rS*N_ISi + rC*N_ICi;               L4IIUAll = L4IIU + rI*N_IIi;
-L4EInputNow = [L4SEAll; L4CEUAll; L4SEAll; L4CEUAll; L4IEUAll]/1000; 
+L4EInputNow = [L4SEUAll; L4CEUAll; L4SEUAll; L4CEUAll; L4IEUAll]/1000; 
 L4IIUnputNow = [L4SIUAll; L4CIUAll; L4SIUAll; L4CIUAll; L4IIUAll]/1000; 
 L4Pix_EventsEU = PoissonInputForNetwork(5,L4EInputNow,LIFSimuT*TimeFrac,dt*dtMltp); % E to everyone
 L4Pix_EventsIU = PoissonInputForNetwork(5,L4IIUnputNow,LIFSimuT*TimeFrac,dt*dtMltp); % I to everyone 
@@ -388,8 +394,8 @@ for tInd = 1:length(tt)-1
         GridDly = floor(RecdDely/dt);
         for cellInd = [2,4,5]
             % either recording thresold
-            if RecdThre>0
             Vt = vRecord(cellInd,:);
+            if RecdThre>0
             Vt(Vt< RecdThre & Vt >0) = nan; 
             end
             GridRef = find(isnan(Vt));
@@ -410,6 +416,7 @@ for tInd = 1:length(tt)-1
 end
 mVUseInd = (1:size(mVs,2))/size(mVs,2) > 1-SampleProp;
 mVLIF = nanmean(mVs(:,mVUseInd),2);
+%mVLIF(isnan(mVLIF)) = 0;
 FrLIF = SpLIF/(T*SampleProp/1000);
 
 end
