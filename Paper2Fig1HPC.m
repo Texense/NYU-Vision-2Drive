@@ -84,8 +84,8 @@ S_EE = S_EEtest(S_EEInd);
 S_II = S_IItest(S_IIInd);%oefficient of variation
 
 % Replace S_EI and SIE by testing values
-GridNum1 = 160*2; %160
-GridNum2 = 160*2; %160
+GridNum1 = 200; %160
+GridNum2 = 200; %160
 S_EI_Mtp = [0.8, 2.0]; % of S_EE
 S_IE_Mtp = [0.1, 0.25]; % of S_II
 S_EItest = linspace(S_EI_Mtp(1),S_EI_Mtp(2),GridNum1)*S_EE;
@@ -130,7 +130,7 @@ SteadyIndicate = zeros(a0,1);
 FailureIndicate = zeros(a0,1);
 
 % We are using the 0.2 threshold here... see how it goes 
-HyperPara = {'Traj',50,50,0.8,10000,'thre',0};
+HyperPara = {'Traj',40,30,0.5,10000,'thre',0};
 parfor MFVInd = 1:a0
         SEIInd = ceil(MFVInd/length(S_EItest));
         SIEInd = mod(MFVInd,length(S_EItest));
