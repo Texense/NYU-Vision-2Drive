@@ -142,7 +142,7 @@ f_EnI0 = MF_SCI_1Pix(N_PreSynPix, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,...
                      gL_E,gL_I,Ve,Vi, tau_ref, mVIn, f_SCIIni, FrLIF); 
                                
                                
-Suspicious = (min(f_EnI0)<-5);                              
+Suspicious = (min(f_EnI0)<-1);                              
 %f_EnI0 = max([f_EnI0,[0;0]],[],2);
 %f_EnI0 = abs(f_EnI0);                                     
 %% The new input!
@@ -162,7 +162,7 @@ else
     SteadyCounter = SteadyCounter+1;
 end
 
-if ((loop>100 || SteadyIndicate) && Suspicious) 
+if ((loop>StopLoop || SteadyIndicate) && Suspicious) 
     FailureIndicate = 1;
 end
 
@@ -258,7 +258,7 @@ ExtV = [ExtSOn;
         ExtI];
     
 Fr_MFinv = (eye(5)-RefM*ConnMat) \ (RefM * ( ExtV + LeakV)); 
-Fr_MFinv(Fr_MFinv<0) = 3;
+%Fr_MFinv(Fr_MFinv<0) = 3;
 % FrPreUseDim = Fr_MFinv<0; 
 % FrPreUse = FrLIF(Fr_MFinv<0);
 % if isempty(FrPreUse)
