@@ -8,8 +8,8 @@
 
 % Output: FringMap
 function FringMap = FrRateModify(CurrentFrE, ConvMat,CurrentBlowupModi,CurrentsteadyModi)
-
-CurrentFrE(CurrentFrE<eps) = nan; CurrentFrE(CurrentBlowupModi) = nan;
+%CurrentFrE(CurrentFrE<eps) = nan; 
+CurrentFrE(CurrentBlowupModi) = nan;
 CurrentFrE(~CurrentsteadyModi) = nan;
 
 CurrentFrE = conv2(CurrentFrE,ConvMat);

@@ -129,7 +129,7 @@ if Fail
 end                             
 %% NOW! consider the previous mVs if it already satisfies steady condition
 if loop>100
-    mVIn = mean(meanVs(:,end-10+1:end)) * 0.9 + mVLIF*0.1;
+    mVIn = mean(meanVs(:,end-10+1:end),2) * 0.9 + mVLIF*0.1; %%% WAS WRONG!!!
 else
      mVIn = mVLIF;
 end

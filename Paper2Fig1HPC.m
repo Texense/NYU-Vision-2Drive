@@ -99,7 +99,7 @@ S_Ilgntest = S_Ilgn_Mtp * S_Elgn;
 S_Ilgn = S_Ilgntest(S_IlgnInd);% number ofLGN cells
 N_Slgn = 4.75; N_Clgn = 1.5; N_Ilgn = 4.5;
 lgn_I = 0.02; 
-lgn_S = [0.02;0.02]; lgn_C = lgn_S;
+lgn_S = [0.02]; lgn_C = lgn_S;
 
 % L6
 S_EL6 = 1/3*S_EE; % S_IL6 = 1/3*S_IEOneTime; Now S_IL6 is porp to S_IE
@@ -128,9 +128,10 @@ meanVs = cell(a0,1);
 loopCount = zeros(a0,1);
 SteadyIndicate = zeros(a0,1);
 FailureIndicate = zeros(a0,1);
+SEIRcd = zeros(a0,1); SIERcd = zeros(a0,1);
 
 % We are using the 0.2 threshold here... see how it goes 
-HyperPara = {'Traj',40,30,0.5,10000,'thre',0};
+HyperPara = {'Traj',50,50,0.5,20000};
 parfor MFVInd = 1:a0
         SEIInd = ceil(MFVInd/length(S_EItest));
         SIEInd = mod(MFVInd,length(S_EItest));
@@ -140,6 +141,7 @@ parfor MFVInd = 1:a0
         S_EI = S_EItest(SEIInd);
         S_IE = S_IEtest(SIEInd);
         S_IL6 = S_IL6test(SIEInd);
+        SEIRcd(MFVInd) = S_EI; SIERcd(MFVInd) = S_IE; 
         
         % Add lines boundaries
         LineL1 = polyfit([0.1  0.2 ],[0.9 0.8],1); % S_IEMtp first, second S_EIMtp. Those numbers are multipliers of S_II and S_EE
@@ -158,7 +160,7 @@ parfor MFVInd = 1:a0
         tic
        [f_EnIOut{MFVInd},meanVs{MFVInd},loopCount(MFVInd),...
         SteadyIndicate(MFVInd),FailureIndicate(MFVInd)]...
-           = MFpV_SinglePixel(...% MF Parameters                     
+        = MFpV_BGSCI(...% MF Parameters                     
                      N_PreSynPix, 0,0, 0,0, 0,0,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
                      S_EL6,S_IL6,rS_L6,rC_L6,rI_L6,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
@@ -167,7 +169,7 @@ parfor MFVInd = 1:a0
                      ...% Below are LIF details
                      tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
                      rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,... %4
-                     HyperPara);
+                     HyperPara)
         toc      
 end
 f_EnIOut = reshape(f_EnIOut,length(S_EItest), length(S_IEtest));
@@ -175,7 +177,8 @@ meanVs = reshape(meanVs,length(S_EItest), length(S_IEtest));
 loopCount = reshape(loopCount,length(S_EItest), length(S_IEtest));
 SteadyIndicate = reshape(SteadyIndicate,length(S_EItest), length(S_IEtest));
 FailureIndicate = reshape(FailureIndicate,length(S_EItest), length(S_IEtest));
-
+SEIRcd = reshape(SEIRcd,length(S_EItest), length(S_IEtest));
+SIERcd = reshape(SIERcd,length(S_EItest), length(S_IEtest));
 % save data
 %Trajs = struct('Fr_NoFixTraj', Fr_NoFixTraj, 'mV_NoFixTraj',mV_NoFixTraj);
 ContourData_PP2 = ws2struct();
