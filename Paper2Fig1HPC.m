@@ -84,10 +84,10 @@ S_EE = S_EEtest(S_EEInd);
 S_II = S_IItest(S_IIInd);%oefficient of variation
 
 % Replace S_EI and SIE by testing values
-GridNum1 = 200; %160
-GridNum2 = 200; %160
-S_EI_Mtp = [0.8, 2.0]; % of S_EE
-S_IE_Mtp = [0.1, 0.25]; % of S_II
+GridNum1 = 240; %160
+GridNum2 = 240; %160
+S_EI_Mtp = [1.4, 2.8]; % of S_EE
+S_IE_Mtp = [0.07, 0.18]; % of S_II
 S_EItest = linspace(S_EI_Mtp(1),S_EI_Mtp(2),GridNum1)*S_EE;
 S_IEtest = linspace(S_IE_Mtp(1),S_IE_Mtp(2),GridNum2)*S_II;%*S_EE; I only specify a vecter length here
 
@@ -144,9 +144,9 @@ parfor MFVInd = 1:a0
         SEIRcd(MFVInd) = S_EI; SIERcd(MFVInd) = S_IE; 
         
         % Add lines boundaries
-        LineL1 = polyfit([0.1  0.2 ],[0.9 0.8],1); % S_IEMtp first, second S_EIMtp. Those numbers are multipliers of S_II and S_EE
-        LineL2 = polyfit([0.06 0.28],[0.9 0.4],1);
-        LineU1 = polyfit([0.1  0.3 ],[2.5 2.2 ],1); % LineU1 = polyfit([0.1  0.3 ],[2.5 0.8],1);
+        LineL1 = polyfit([0.1   0.17],[1.8 1.3],1); % S_IEMtp first, second S_EIMtp. Those numbers are multipliers of S_II and S_EE
+        LineL2 = polyfit([0.105 0.18],[2   1  ],1);
+        LineU1 = polyfit([0.18  0.25],[2   1.22],1); % LineU1 = polyfit([0.1  0.3 ],[2.5 0.8],1);
 
         if (S_EI/S_EE<=S_IE/S_II*LineL1(1)+LineL1(2) || S_EI/S_EE<=S_IE/S_II*LineL2(1)+LineL2(2) )
             disp(['S_IE = ' num2str(S_IE/S_II,'%.3f') '*S_II, S_EI = ' num2str(S_EI/S_EE,'%.3f') '*S_EE; Fr may be too high, break...'])
