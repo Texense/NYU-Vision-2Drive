@@ -92,9 +92,10 @@ S_EItest = linspace(S_EI_Mtp(1),S_EI_Mtp(2),GridNum1)*S_EE;
 S_IEtest = linspace(S_IE_Mtp(1),S_IE_Mtp(2),GridNum2)*S_II;%*S_EE; I only specify a vecter length here
 
 % lgn
-S_Elgntest = [1.5 2 2.5 3.0]*S_EE;
+S_Elgntest = [1.5 2.2 2.5 3.0]*S_EE; % Changing 2 to 2.2
+S_Ilgn_Mtp = [1.5 2.1 2.5 3]; % of S_Elgn Changing 2 to 2.2
+
 S_Elgn = S_Elgntest(S_ElgnInd);
-S_Ilgn_Mtp = [1.5 2 2.5 3]; % of S_Elgn
 S_Ilgntest = S_Ilgn_Mtp * S_Elgn;
 S_Ilgn = S_Ilgntest(S_IlgnInd);% number ofLGN cells
 N_Slgn = 4.75; N_Clgn = 1.5; N_Ilgn = 4.5;
@@ -131,7 +132,7 @@ FailureIndicate = zeros(a0,1);
 SEIRcd = zeros(a0,1); SIERcd = zeros(a0,1);
 
 % We are using the 0.2 threshold here... see how it goes 
-HyperPara = {'Traj',50,50,0.5,20000};
+HyperPara = {'Traj',100,50,0.8,20000};
 parfor MFVInd = 1:a0
         SEIInd = ceil(MFVInd/length(S_EItest));
         SIEInd = mod(MFVInd,length(S_EItest));
