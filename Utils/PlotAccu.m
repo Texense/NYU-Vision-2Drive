@@ -3,7 +3,7 @@
 %        bounds: [lower bound, upper bound] ; can be flexible for 10%
 %        colorcode: [good;ok;bad] what color to indicate
 function [CIndi] = PlotAccu(XData, YData, CData, bounds, colorcode,TitText)
-FlexPor = 0.15;
+FlexPor = 0.18;
 
 Good = CData>=bounds(1)             & CData<=bounds(2);
 OK   = (CData>=bounds(1)*(1-FlexPor) & CData<=bounds(2)*(1+FlexPor)) & (~Good);

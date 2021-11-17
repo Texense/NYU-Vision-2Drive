@@ -270,7 +270,8 @@ T = 10000; dt = 0.1; TPar = 10;
 lambda_E_drive_Pre = 45 *N_Slgn/1e3 * StimulusFac;
 lambda_I_drive_Pre = 45 *N_Ilgn/1e3 * StimulusFac;
 
-L6Ord_F = [50 33 15 33];
+%L6Ord_F = [50 33 15 33];
+L6Ord_F = [50 30 10 30];
 L6S_Drive = L6Ord_F*NS_L6/1e3 * StimulusFac;
 L6C_Drive = L6Ord_F*NC_L6/1e3 * StimulusFac;
 L6I_Drive = L6Ord_F*NI_L6/1e3 * StimulusFac;

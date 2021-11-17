@@ -92,8 +92,8 @@ S_EItest = linspace(S_EI_Mtp(1),S_EI_Mtp(2),GridNum1)*S_EE;
 S_IEtest = linspace(S_IE_Mtp(1),S_IE_Mtp(2),GridNum2)*S_II;%*S_EE; I only specify a vecter length here
 
 % lgn
-S_Elgntest = [1.5 2.2 2.5 3.0]*S_EE; % Changing 2 to 2.2
-S_Ilgn_Mtp = [1.5 2.1 2.5 3]; % of S_Elgn Changing 2 to 2.2
+S_Elgntest = [1.5 2 2.5 3.0]*S_EE; % Changing 2 to 2.2
+S_Ilgn_Mtp = [1.5 2 2.5 3]; % of S_Elgn Changing 2 to 2.2
 
 S_Elgn = S_Elgntest(S_ElgnInd);
 S_Ilgntest = S_Ilgn_Mtp * S_Elgn;
