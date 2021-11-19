@@ -25,7 +25,7 @@ C_CI_Fix_Bd = C_EI_Fix_Bd(EcplxInd,:);
 C_IS_Fix_Bd = C_IE_Fix_Bd(:,~EcplxInd);
 C_IC_Fix_Bd = C_IE_Fix_Bd(:,EcplxInd);
 
-fid = fopen([DataFolder 'MFVDriveTest.txt'],'rt');
+fid = fopen([DataFolder 'MFVDriveTestV4.txt'],'rt');
 C = textscan(fid, '%f%f', 'MultipleDelimsAsOne',true, 'Delimiter','[;');
 fclose(fid);
 
@@ -141,7 +141,7 @@ for dirInd = 1:length(C{1})
     lambda_E_drive_Pre = 45 *N_Slgn/1e3 * StimulusFac;
     lambda_I_drive_Pre = 45 *N_Ilgn/1e3 * StimulusFac;
     
-    L6Ord_F = [50 33 15 33];
+    L6Ord_F = [50 31 12 31];
     L6S_Drive = L6Ord_F*NS_L6/1e3 * StimulusFac;
     L6C_Drive = L6Ord_F*NC_L6/1e3 * StimulusFac;
     L6I_Drive = L6Ord_F*NI_L6/1e3 * StimulusFac;
