@@ -13,7 +13,7 @@ CurrentFolder = pwd
 addpath(CurrentFolder)
 addpath([CurrentFolder '/Utils'])
 addpath([CurrentFolder '/Data'])
-SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
+SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/'];
 addpath(SaveFolder)
 DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
@@ -22,7 +22,7 @@ if ~ismember(InputCtgr,[1,2,3])
     error('No such input category. Exit.')
 end
 
-S = load('AllMFPixPara_Paper2Tune.mat');
+S = load('AllMFPixPara_Paper2TuneFig1V4.mat');
 % For part one: Preparing...
 C_SS_Pixel_Us = S.C_SS_Pixel_Us;
 C_CS_Pixel_Us = S.C_CS_Pixel_Us;
@@ -155,6 +155,6 @@ end
 % Save MFpV Data
 %CurrentFolder = pwd;
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
-save([SaveFolder 'Paper2_LDE' num2str(InputCtgr) '.mat'],...
+save([SaveFolder 'Paper2_LDE' num2str(InputCtgr) '_Fig1V4.mat'],...
     'f_EnIOut','meanVs','SteadyIndicate','FailureIndicate','L4ERcrd','L4IRcrd')    
 end
