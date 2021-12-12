@@ -68,8 +68,8 @@ TimeFrac = 1/(LIFSimuT/1e3)/LGNFreq;
 lgn_Events    = PoissonInputForNetwork(3, 45*[N_Slgn;N_Clgn;N_Ilgn]/1e3 ,LIFSimuT*TimeFrac,dt,true);
 AmbPix_Events = PoissonInputForNetwork(3,[rS_amb;rC_amb;rI_amb],LIFSimuT*TimeFrac,dt,true);
 L6Pix_Events  = PoissonInputForNetwork(3,[rL6SU; rL6CU; rL6IU], LIFSimuT*TimeFrac,dt,true);
-L4Pix_EventsE = PoissonInputForNetwork(3,[L4SE*(1-p_EEFail); L4CE*(1-p_EEFail); L4IE],LIFSimuT*TimeFrac,dt,true); % Need to count EE failure here
-L4Pix_EventsI = PoissonInputForNetwork(3,[L4SI;              L4CI;              L4II],LIFSimuT*TimeFrac,dt,true);
+L4Pix_EventsE = PoissonInputForNetwork(3,[L4SE*(1-p_EEFail); L4CE*(1-p_EEFail); L4IE]/1e3,LIFSimuT*TimeFrac,dt,true); % Need to count EE failure here
+L4Pix_EventsI = PoissonInputForNetwork(3,[L4SI;              L4CI;              L4II]/1e3,LIFSimuT*TimeFrac,dt,true);
 gL = [gL_E*ones(2,1); gL_I*ones(1)];
 
 lgn_Slifort = 0.045*ones(2,1);
@@ -84,7 +84,6 @@ SpRcdCyc = cell(TCyc,1);
 RefTimer = zeros(3, 1); % initiate the timer of ref
 vt = zeros(3, 1); 
 
-tic
 for TInt = 1:TCyc
     VRcd = zeros(size(L4Pix_EventsE));
     SpLIF = zeros(3, 1);
@@ -136,7 +135,6 @@ for TInt = 1:TCyc
     %VRcdCyc{TInt} = VRcd;
     SpRcdCyc{TInt} = SpLIF;
 end
-toc
 
 %% I am not concerning the Vs now, but maybe need that in future
 %VRcdMat = cell2mat(VRcdCyc')';
