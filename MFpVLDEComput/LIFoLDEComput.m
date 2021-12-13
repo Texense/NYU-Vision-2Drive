@@ -83,15 +83,12 @@ L4CI = zeros(N_HC*NPixX*N_HC*NPixY,1);
 L4IE = zeros(N_HC*NPixX*N_HC*NPixY,1);
 L4II = zeros(N_HC*NPixX*N_HC*NPixY,1);
 for PInd = 1:N_HC*NPixX*N_HC*NPixY
-L4SE(PInd) = (C_SS_Pixel_Us(PInd,:)*FrSPixVec          + C_SC_Pixel_Us(PInd,:)*FrCPixVec)...
-            - C_SS_Pixel_Us(PInd,PInd)*FrSPixVec(PInd) - C_SC_Pixel_Us(PInd,PInd)*FrCPixVec(PInd);
-L4SI(PInd) =  C_SI_Pixel_Us(PInd,:)*FrIPixVec - C_SI_Pixel_Us(PInd,PInd)*FrIPixVec(PInd);
-L4CE(PInd) = (C_CS_Pixel_Us(PInd,:)*FrSPixVec          + C_CC_Pixel_Us(PInd,:)*FrCPixVec)...
-            - C_CS_Pixel_Us(PInd,PInd)*FrSPixVec(PInd) - C_CC_Pixel_Us(PInd,PInd)*FrCPixVec(PInd);
-L4CI(PInd) =  C_CI_Pixel_Us(PInd,:)*FrIPixVec - C_CI_Pixel_Us(PInd,PInd)*FrIPixVec(PInd);
-L4IE(PInd) = (C_IS_Pixel_Us(PInd,:)*FrSPixVec          + C_IC_Pixel_Us(PInd,:)*FrCPixVec)...
-            - C_IS_Pixel_Us(PInd,PInd)*FrSPixVec(PInd) - C_IC_Pixel_Us(PInd,PInd)*FrCPixVec(PInd);
-L4II(PInd) =  C_II_Pixel_Us(PInd,:)*FrIPixVec - C_II_Pixel_Us(PInd,PInd)*FrIPixVec(PInd);
+L4SE(PInd) = (C_SS_Pixel_Us(PInd,:)*FrSPixVec          + C_SC_Pixel_Us(PInd,:)*FrCPixVec);
+L4SI(PInd) =  C_SI_Pixel_Us(PInd,:)*FrIPixVec ;
+L4CE(PInd) = (C_CS_Pixel_Us(PInd,:)*FrSPixVec          + C_CC_Pixel_Us(PInd,:)*FrCPixVec);
+L4CI(PInd) =  C_CI_Pixel_Us(PInd,:)*FrIPixVec ;
+L4IE(PInd) = (C_IS_Pixel_Us(PInd,:)*FrSPixVec          + C_IC_Pixel_Us(PInd,:)*FrCPixVec);
+L4II(PInd) =  C_II_Pixel_Us(PInd,:)*FrIPixVec ;
 end
 L4Eall = L4SE+L4CE+L4IE; L4Iall = L4SI+L4CI+L4II;
 L4SEp = mean(L4SE./L4Eall);L4CEp = mean(L4CE./L4Eall);L4IEp = mean(L4IE./L4Eall);
@@ -101,8 +98,8 @@ YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of th
 Bdry = floor(max(abs(YRange))/100)*100;
 % Get a much larger domain
 
-L4ERange = 0:200:ceil(max(L4Eall)*2/100)*100;
-L4IDiffRange = -12*Bdry:200:12*Bdry;
+L4ERange = 0:300:ceil(max(L4Eall)*2/100)*100;
+L4IDiffRange = -24*Bdry:300:24*Bdry;
 
 %% Start parallel computation
 cluster = gcp('nocreate');
