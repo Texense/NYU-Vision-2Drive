@@ -157,6 +157,6 @@ end
 % Save MFpV Data
 %CurrentFolder = pwd;
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
-save([SaveFolder 'Paper2_LIFoLDE' num2str(InputCtgr) '_Fig1V4.mat'],...
+save([SaveFolder 'Paper2_LIFoLDE' num2str(InputCtgr) '_Fig1V4D1_Grating.mat'],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end
