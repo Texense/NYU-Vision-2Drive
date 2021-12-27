@@ -6,6 +6,7 @@
 %        CtgrName Name of OD Category
 %        ODCtgr   OD Category: 1-3 
 %        CellCtgr: S C I
+%        varargin: smooth/not contour/not MFv/LIF [rowsmoothwin colsmoothwin]
 % Output: LDEFrcell Fr function on grid L4EPlot,L4IPlot
 
 function [LDEFrVec] = LDEPlotRateFunc(L4EPlot,L4IPlot,FrLDE,a1,a2,CtgrName,ODCtgr,CellCtgr,varargin)
@@ -25,6 +26,14 @@ if nargin >10 % MFv (true) or LIf (false)
     MFv = varargin{3};
 else
     MFv = true;
+end
+
+if nargin > 11
+    rowWinSize = varargin{4}(1);
+    colWinSize = varargin{4}(2);
+else
+    rowWinSize = 5;
+    colWinSize = 5;
 end
 
 if MFv
@@ -55,9 +64,13 @@ end
 
 if smth
     LDEFrcell= smoothdata(...
-                smoothdata(reshape((FrLDE(:,CId1)+FrLDE(:,CId2))/2,a2,a1)),2);
-else
-    LDEFrcell = reshape((FrLDE(:,CId1)+FrLDE(:,CId2))/2,a2,a1);
+                smoothdata(reshape((FrLDE(:,CId1)+FrLDE(:,CId2))/2,a2,a1),...
+                2,'movmean',rowWinSize),...
+                  'movmean',colWinSize);
+%  LDEFrcell= smoothdata(...
+%                 smoothdata(reshape((FrLDE(:,CId1)+FrLDE(:,CId2))/2,a2,a1),2));
+ else
+    LDEFrcell =            reshape((FrLDE(:,CId1)+FrLDE(:,CId2))/2,a2,a1);
 end
 
 s = mesh(L4EPlot,L4IPlot,LDEFrcell,'FaceAlpha','0.4');

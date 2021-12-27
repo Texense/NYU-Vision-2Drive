@@ -1,13 +1,14 @@
 %% Precomputing on Planes: Give input, compute firing rates as functions of inputs
 % Output: save([SaveFolder 'MFpV_LDE_' num2str(InputCtgr) '.mat'],...
 %              'f_EnIOut','meanVs','SteadyIndicate','FailureIndicate','L4ERcrd','L4IRcrd')   
-% Input:  InputCtgr: Choices from 1-3. Orthogonal, suboptimal, optimal
+% Input:  InputCtgr: Choices from 1-7: 6 division of the angle.
+%                    L6 are assumed to be completely scaled with LGN
 
 % Version 0: Get all parameters from a para file, and I only specify two
 % input.
 % Zhuo-Cheng Xiao 12/11/2021
 
-function [] = LIFoLDEComput(InputCtgr)
+function [] = LIFoLDEComput_Grating(InputCtgr)
 CurrentFolder = pwd
 %FigurePath = [CurrentFolder '/Figures'];
 addpath(CurrentFolder)
@@ -61,15 +62,17 @@ clear S
 %                mean(diag(C_SI_Pixel_Us)),mean(diag(C_CI_Pixel_Us)),mean(diag(C_II_Pixel_Us))];
 % % external drives: lgn and L6
 % NlgnS = N_Slgn; NlgnC = N_Clgn; NlgnI = N_Ilgn;
-NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
-FL6_One = unique(L6Ord_F)/1e3; % should be a 1*3 asending array
-%rL6E = [1.0; 1.75; 2.5]; rL6I = 3*rL6E;
-
-lgn_SOnOff = [0.045, 0.0675, 0.09;
-              0.045, 0.0225, 0.00];
+NFunc = 7;
+lgn_SOnOff = [linspace(45,90,NFunc);
+              linspace(45, 0,NFunc)]/1e3;        
+          
 lgn_COnOff = [0.045;
               0.045];
 lgn_I =       0.045;
+
+NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
+FL6_One = linspace(min(L6Ord_F),max(L6Ord_F),NFunc)/1e3; % should be a 1*3 asending array
+%rL6E = [1.0; 1.75; 2.5]; rL6I = 3*rL6E;
                                 
 rL6SU = NL6S*FL6_One(InputCtgr); %rL6EU = rL6E(InputCtgr); 
 rL6CU = NL6C*FL6_One(InputCtgr);
@@ -99,8 +102,8 @@ YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of th
 Bdry = floor(max(abs(YRange))/100)*100;
 % Get a much larger domain
 
-L4ERange = 0:300:1.5*ceil(max(L4Eall)*2/100)*100;
-L4IDiffRange = -80*Bdry:300:80*Bdry;
+L4ERange = 0:200:1.5*ceil(max(L4Eall)*2/100)*100;
+L4IDiffRange = -80*Bdry:200:80*Bdry;
 
 %% Start parallel computation
 cluster = gcp('nocreate');
