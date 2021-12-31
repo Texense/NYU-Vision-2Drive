@@ -19,9 +19,9 @@ addpath(SaveFolder)
 DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
 
-if ~ismember(InputCtgr,[1,2,3])
-    error('No such input category. Exit.')
-end
+% if ~ismember(InputCtgr,[1,2,3])
+%     error('No such input category. Exit.')
+% end
 
 S = load('AllMFPixPara_Paper2TuneFig1V4.mat');
 % For part one: Preparing...
@@ -102,8 +102,8 @@ YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of th
 Bdry = floor(max(abs(YRange))/100)*100;
 % Get a much larger domain
 
-L4ERange = 0:200:1.5*ceil(max(L4Eall)*2/100)*100;
-L4IDiffRange = -80*Bdry:200:80*Bdry;
+L4ERange = 0:100:1.5*ceil(max(L4Eall)*2/100)*100;
+L4IDiffRange = -40*Bdry:100:40*Bdry;
 
 %% Start parallel computation
 cluster = gcp('nocreate');

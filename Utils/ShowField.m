@@ -15,8 +15,21 @@ elseif size(Vec,2) == 3
     image(Map)
     set(gca,'YDir','normal')
 end
+%% Plot HC boundaries
+hold on
+XHc = floor(XPix/10); YHc = floor(YPix/10);
+for VerInd = 1:XHc -1
+    plot(ones(length(0:YPix))*(VerInd*10+0.1),0:YPix,'g-','LineWidth',3)
+end
+for HorInd = 1:YHc -1
+    plot(0:XPix,ones(length(0:XPix))*(HorInd*10+0.1),'g-','LineWidth',3)
+end
+
 if nargin > 4
     title(varargin{1})
+end
+if nargin > 5
+    caxis(varargin{2})
 end
 axis square
 end

@@ -20,7 +20,7 @@ PixNum = NPixX*N_HC * NPixY*N_HC;
 InptTypeNeu = zeros(length(InptS_drive),length(temp));
 for NeuInd = 1:length(InptS_drive)
     CurrInpt = InptS_drive(NeuInd);
-    if CurrInpt>temp(3) % larger than the maximum
+    if CurrInpt>temp(end) % larger than the maximum
         InptTypeNeu(NeuInd,end) = 1;
     elseif CurrInpt<temp(1) % smaller than the minimum
         InptTypeNeu(NeuInd,1) = 1;
