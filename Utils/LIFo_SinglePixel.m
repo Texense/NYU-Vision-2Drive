@@ -72,7 +72,7 @@ L4Pix_EventsE = PoissonInputForNetwork(3,[L4SE*(1-p_EEFail); L4CE*(1-p_EEFail); 
 L4Pix_EventsI = PoissonInputForNetwork(3,[L4SI;              L4CI;              L4II]/1e3,LIFSimuT*TimeFrac,dt,true);
 gL = [gL_E*ones(2,1); gL_I*ones(1)];
 
-lgn_Slifort = 0.045*ones(2,1);
+lgn_Slifort = 45*ones(2,1)/1e3;
 lgnAdj = lgn_SU./lgn_Slifort;
 lgnAdjU = reshape(repmat(lgnAdj,1,floor(size(L4Pix_EventsE,2)/2))', 1, 2*floor(size(L4Pix_EventsE,2)/2));
 
