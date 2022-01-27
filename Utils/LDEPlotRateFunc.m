@@ -78,12 +78,16 @@ s.FaceColor = 'flat';
 s.EdgeColor = 'none';
 hold on
 if Contour
-   contour(L4EPlot,L4IPlot,LDEFrcell,'r',"ShowText",'on')
+    contour(L4EPlot,L4IPlot,LDEFrcell,'r',"ShowText",'on')
+    view([0 90])
+    xlabel('L4E'); ylabel('L4I');
+    if iscell(CtgrName)
+        title([CellCtgr ' ' CtgrName{ODCtgr}])
+    elseif isnumeric(CtgrName)
+        title(sprintf('%s LGN inpt %d, L6 inpt %d',CellCtgr,CtgrName,ODCtgr))
+    end
+    colorbar;
+    axis tight
 end
-view([0 90])
-xlabel('L4E'); ylabel('L4I');title([CellCtgr ' ' CtgrName{ODCtgr}])
-colorbar;
-axis tight
-
 LDEFrVec = reshape(LDEFrcell,a1*a2,1);
 end

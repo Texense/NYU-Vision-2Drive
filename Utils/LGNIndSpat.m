@@ -13,26 +13,33 @@
 %         LGNon: 1*lgn vecter, entries are lgn values of each type. from
 %                 small to large
 
-
+% A important variant: If InptS_drive is already ctgr type, then no need to
+% assign anymore
 function [PixLGNCtgr] = LGNIndSpat(InptS_drive, temp, NnSPixel,N_HC,N_HCout,NPixX,NPixY)
 PixNum = NPixX*N_HC * NPixY*N_HC;
-% get LGN type of each cell
-InptTypeNeu = zeros(length(InptS_drive),length(temp));
-for NeuInd = 1:length(InptS_drive)
-    CurrInpt = InptS_drive(NeuInd);
-    if CurrInpt>temp(end) % larger than the maximum
-        InptTypeNeu(NeuInd,end) = 1;
-    elseif CurrInpt<temp(1) % smaller than the minimum
-        InptTypeNeu(NeuInd,1) = 1;
-    elseif ismember(CurrInpt,temp) % if exactly equals to certain template
-        InptTypeNeu(NeuInd,:) = double(temp==CurrInpt);
-    else % between two templates
-        loc = find(sort([temp,CurrInpt])==CurrInpt);
-        InptTypeNeu(NeuInd,loc-1) = (CurrInpt-temp(loc))/(temp(loc-1)-temp(loc));
-        InptTypeNeu(NeuInd,loc)   = 1-InptTypeNeu(NeuInd,loc-1);
+%% get LGN type of each cell
+if size(InptS_drive,2) == 1
+    InptTypeNeu = zeros(length(InptS_drive),length(temp));
+    for NeuInd = 1:length(InptS_drive)
+        CurrInpt = InptS_drive(NeuInd);
+        if CurrInpt>temp(end) % larger than the maximum
+            InptTypeNeu(NeuInd,end) = 1;
+        elseif CurrInpt<temp(1) % smaller than the minimum
+            InptTypeNeu(NeuInd,1) = 1;
+        elseif ismember(CurrInpt,temp) % if exactly equals to certain template
+            InptTypeNeu(NeuInd,:) = double(temp==CurrInpt);
+        else % between two templates
+            loc = find(sort([temp,CurrInpt])==CurrInpt);
+            InptTypeNeu(NeuInd,loc-1) = (CurrInpt-temp(loc))/(temp(loc-1)-temp(loc));
+            InptTypeNeu(NeuInd,loc)   = 1-InptTypeNeu(NeuInd,loc-1);
+        end
     end
+elseif size(InptS_drive,2) == length(temp)
+    InptTypeNeu = InptS_drive;
+else
+    disp('illigal Inpt information. Check')
+    return
 end
-
 
 InptTypePix = zeros(PixNum,length(temp));
 

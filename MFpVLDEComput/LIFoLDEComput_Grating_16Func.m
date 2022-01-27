@@ -65,7 +65,7 @@ lgn_I =       0.045;
 %%%%%%%%% These are unused in LIF-only function... %%%%%%%  
 % redefine low-up bounds for L6: [10 54]
 NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
-L6up = 54; L6low = 10;
+L6up = 60; L6low = 8; %[10 54; 12 50]
 FL6_Angle1 = ((abs(mod(Angles_4Input,180)-90)/90)*(L6up-L6low)+L6low) /1e3; % get L6 frs
 %rL6E = [1.0; 1.75; 2.5]; rL6I = 3*rL6E;
                                 
@@ -151,6 +151,6 @@ end
 % Save MFpV Data
 %CurrentFolder = pwd;
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
-save([SaveFolder sprintf('Paper2_LIFoLDE_Fig1V4D1_Ang%d_LGNc%d_L6c%d.mat',Angle, LGNctgr, L6ctgr)],...
+save([SaveFolder sprintf('Paper2_LIFoLDE_Fig1V4D1_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d.mat',Angle, LGNctgr, L6ctgr, L6up,L6low)],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end
