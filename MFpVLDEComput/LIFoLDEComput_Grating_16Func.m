@@ -3,11 +3,11 @@
 %              'f_EnIOut','meanVs','SteadyIndicate','FailureIndicate','L4ERcrd','L4IRcrd')   
 % Input:  Angle:ranging from 0-90 deg, although we only use 0 7.5 15 22.5
 %         LGNctgr, L6ctgr: ranging from 1-4
-
+%         LGNL6Mapctgr: 1 for linear, 2 for cosine
 % Version 1: L6 range switched to [10 60] Hz per L6 neuron
 % Zhuo-Cheng Xiao 01/24/2022
 
-function [] = LIFoLDEComput_Grating_16Func(Angle, LGNctgr, L6ctgr)
+function [] = LIFoLDEComput_Grating_16Func(Angle, LGNctgr, L6ctgr, varargin)
 CurrentFolder = pwd
 %FigurePath = [CurrentFolder '/Figures'];
 addpath(CurrentFolder)
@@ -17,6 +17,12 @@ SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/'];
 addpath(SaveFolder)
 DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
+
+if length(varargin)<1
+    LGNL6Mapctgr = 1; 
+else
+    LGNL6Mapctgr = varargin{1};
+end
 
 % if ~ismember(InputCtgr,[1,2,3])
 %     error('No such input category. Exit.')
@@ -65,10 +71,17 @@ lgn_I =       0.045;
 %%%%%%%%% These are unused in LIF-only function... %%%%%%%  
 % redefine low-up bounds for L6: [10 54]
 NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
-L6up = 60; L6low = 8; %[10 54; 12 50]
-FL6_Angle1 = ((abs(mod(Angles_4Input,180)-90)/90)*(L6up-L6low)+L6low) /1e3; % get L6 frs
+L6up = 60; L6low = 6; %[10 54; 12 50]
+if LGNL6Mapctgr == 1
+   FL6_Angle1 = ((abs(mod(Angles_4Input,180)-90)/90)*(L6up-L6low)+L6low) /1e3; % get L6 frs
+   ExpTex = 'Linear';
+elseif LGNL6Mapctgr == 2
+   FL6_Angle1 = ((cosd(abs(mod(Angles_4Input,180))*2)+1)/2*(L6up-L6low)+L6low) /1e3; 
+   ExpTex = 'Cosine';
+else
+   disp("illigal LGN->L6 mapping.")
 %rL6E = [1.0; 1.75; 2.5]; rL6I = 3*rL6E;
-                                
+end                            
 rL6SU = NL6S*FL6_Angle1(L6ctgr); %rL6EU = rL6E(InputCtgr); 
 rL6CU = NL6C*FL6_Angle1(L6ctgr);
 rL6IU = NL6I*FL6_Angle1(L6ctgr);
@@ -151,6 +164,9 @@ end
 % Save MFpV Data
 %CurrentFolder = pwd;
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
-save([SaveFolder sprintf('Paper2_LIFoLDE_Fig1V4D1_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d.mat',Angle, LGNctgr, L6ctgr, L6up,L6low)],...
+
+save([SaveFolder ...
+      sprintf('Paper2_LIFoLDE_Fig1V4D1_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s.mat',...
+      Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex)],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end
