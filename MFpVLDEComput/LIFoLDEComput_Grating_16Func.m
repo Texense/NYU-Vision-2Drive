@@ -28,7 +28,7 @@ end
 %     error('No such input category. Exit.')
 % end
 
-S = load('AllMFPixPara_Paper2TuneFig1V4.mat');
+S = load('AllMFPixPara_Paper2TuneFig1V4D2.mat');
 % For part one: Preparing...
 C_SS_Pixel_Us = S.C_SS_Pixel_Us;
 C_CS_Pixel_Us = S.C_CS_Pixel_Us;
@@ -73,11 +73,21 @@ lgn_I =       0.045;
 NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
 L6up = 60; L6low = 6; %[10 54; 12 50]
 if LGNL6Mapctgr == 1
-   FL6_Angle1 = ((abs(mod(Angles_4Input,180)-90)/90)*(L6up-L6low)+L6low) /1e3; % get L6 frs
+   lgn_SOnOff = [45+abs(mod(Angles_4Input,180)-90)/2;
+                 45-abs(mod(Angles_4Input,180)-90)/2]/1e3;  
+   FL6_Angle1 = ((abs(mod(Angles_4Input,180)-90)/90)      *(L6up-L6low)+L6low) /1e3; % get L6 frs
    ExpTex = 'Linear';
 elseif LGNL6Mapctgr == 2
+   lgn_SOnOff = [45+abs(mod(Angles_4Input,180)-90)/2;
+                 45-abs(mod(Angles_4Input,180)-90)/2]/1e3;  
    FL6_Angle1 = ((cosd(abs(mod(Angles_4Input,180))*2)+1)/2*(L6up-L6low)+L6low) /1e3; 
-   ExpTex = 'Cosine';
+   ExpTex = 'Cosine_L6';
+elseif LGNL6Mapctgr == 3
+   lgn_SOnOff = [45+(cosd(abs(mod(Angles_4Input,180))*2)+1)/2*45;
+                 45-(cosd(abs(mod(Angles_4Input,180))*2)+1)/2*45]/1e3;  
+   FL6_Angle1 = ((cosd(abs(mod(Angles_4Input,180))*2)+1)/2*(L6up-L6low)+L6low) /1e3; 
+   
+   ExpTex = 'Cosine_All';   
 else
    disp("illigal LGN->L6 mapping.")
 %rL6E = [1.0; 1.75; 2.5]; rL6I = 3*rL6E;
@@ -117,7 +127,7 @@ cluster = gcp('nocreate');
 if isempty(cluster)
 cluster = parpool("local",[4,128]);
 end
-addAttachedFiles(cluster, {'AllMFPixPara_Paper2TuneFig1V4.mat'}); 
+addAttachedFiles(cluster, {'AllMFPixPara_Paper2TuneFig1V4D2.mat'}); 
 
 a0 = length(L4ERange)*length(L4IDiffRange);
 f_EnIOut = cell(a0,1);
@@ -166,7 +176,7 @@ end
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 
 save([SaveFolder ...
-      sprintf('Paper2_LIFoLDE_Fig1V4D1_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s.mat',...
+      sprintf('Paper2_LIFoLDE_Fig1V4D2_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s.mat',...
       Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex)],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end
