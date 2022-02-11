@@ -58,9 +58,16 @@ for lgnTy = 1:length(temp)
     Ind_SOn_Map(:,:,lgnTy) = reshape(InptTypePix(:,lgnTy),NPixY*N_HC,NPixX*N_HC);
 end
 
-% Now extract a basic periodic 2*2HC map, then expand to a new N_HCout^2
-% map
+% Now extract a basic periodic 2*2HC map, then expand to a new N_HCout^2 map
 Ind_SOn_Map2by2 = Ind_SOn_Map(1:2*NPixY , 1:2*NPixX, :);
+% Do a symmetry here!
+Ind_SOn_Map2by2Sym = zeros(2*NPixY,2*NPixX,length(temp),4);
+Ind_SOn_Map2by2Sym(:,:,:,1) = Ind_SOn_Map2by2;
+Ind_SOn_Map2by2Sym(:,:,:,2) = Ind_SOn_Map2by2(end:-1:1,:,:);
+Ind_SOn_Map2by2Sym(:,:,:,3) = Ind_SOn_Map2by2(:,end:-1:1,:);
+Ind_SOn_Map2by2Sym(:,:,:,4) = Ind_SOn_Map2by2(end:-1:1,end:-1:1,:);
+Ind_SOn_Map2by2 = mean(Ind_SOn_Map2by2Sym,4);
+
 PixIndX = mod(1:N_HCout*NPixX,2*NPixX); PixIndX(PixIndX==0) = 2*NPixX;
 PixIndY = mod(1:N_HCout*NPixY,2*NPixY); PixIndY(PixIndY==0) = 2*NPixY;
 Ind_SOn_MapOut = Ind_SOn_Map2by2(PixIndY,PixIndX,:);
