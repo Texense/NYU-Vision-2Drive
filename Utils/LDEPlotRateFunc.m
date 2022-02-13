@@ -8,8 +8,9 @@
 %        CellCtgr: S C I
 %        varargin: smooth/not contour/not MFv/LIF [rowsmoothwin colsmoothwin]
 % Output: LDEFrcell Fr function on grid L4EPlot,L4IPlot
+%         ContourInfo: Linear slop/intersect of contour lines
 
-function [LDEFrVec] = LDEPlotRateFunc(L4EPlot,L4IPlot,FrLDE,a1,a2,CtgrName,ODCtgr,CellCtgr,varargin)
+function [LDEFrVec,ContourInfo] = LDEPlotRateFunc(L4EPlot,L4IPlot,FrLDE,a1,a2,CtgrName,ODCtgr,CellCtgr,varargin)
 if nargin > 8 % smooth or not
     smth = varargin{1};
 else
@@ -78,7 +79,7 @@ s.FaceColor = 'flat';
 s.EdgeColor = 'none';
 hold on
 if Contour
-    contour(L4EPlot,L4IPlot,LDEFrcell,'r',"ShowText",'on')
+    [~,hh] = contour(L4EPlot,L4IPlot,LDEFrcell,5,'r',"ShowText",'on');
     view([0 90])
     xlabel('L4E'); ylabel('L4I');
     if iscell(CtgrName)
@@ -88,6 +89,15 @@ if Contour
     end
     colorbar;
     axis tight
+    
+    % Export contour line slops
+    ContourInfo = getContourLineCoordinates(hh);
+%     ContourInfo = zeros(length(hh),2);
+%     for ctInd = 1:length(hh)        
+%         ctX = get(hh(ctInd),'XData');
+%         ctY = get(hh(ctInd),'YData');
+%         ContourInfo(ctInd,:) = polyfit(ctX,ctY,1);
+%     end
 end
 LDEFrVec = reshape(LDEFrcell,a1*a2,1);
 end
