@@ -76,6 +76,13 @@ Ker_PQ_meanSym(2:end,:,2) = Ker_PQ_mean(end:-1:2,:);
 Ker_PQ_meanSym(:,2:end,3) = Ker_PQ_mean(:,end:-1:2);
 Ker_PQ_meanSym(2:end,2:end,4) = Ker_PQ_mean(end:-1:2,end:-1:2);
 Ker_PQ_mean = mean(Ker_PQ_meanSym,3);
+% Do a symmetry here! Then diagonal and antidiagonal
+Ker_PQ_meanDia = zeros(2*NPixY,2*NPixX,4);
+Ker_PQ_meanDia(:,:,1) = Ker_PQ_mean(:,:);
+Ker_PQ_meanDia(2:end,2:end,2) = Ker_PQ_mean(2:end,2:end)';
+Ker_PQ_meanDia(2:end,2:end,3) = rot90(Ker_PQ_mean(2:end,2:end),2);
+Ker_PQ_meanDia(2:end,2:end,4) = rot90(Ker_PQ_mean(2:end,2:end),2)';
+Ker_PQ_mean = mean(Ker_PQ_meanDia,3);
 %% Put Kernel back to Matrix
 C_SS_mean  = zeros(N_HCout*NPixX*N_HCout*NPixY);
 
