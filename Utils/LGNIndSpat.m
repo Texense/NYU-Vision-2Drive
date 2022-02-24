@@ -67,14 +67,11 @@ Ind_SOn_Map2by2Sym(:,:,:,2) = Ind_SOn_Map2by2(end:-1:1,:,:);
 Ind_SOn_Map2by2Sym(:,:,:,3) = Ind_SOn_Map2by2(:,end:-1:1,:);
 Ind_SOn_Map2by2Sym(:,:,:,4) = Ind_SOn_Map2by2(end:-1:1,end:-1:1,:);
 Ind_SOn_Map2by2 = mean(Ind_SOn_Map2by2Sym,4);
-% Do a symmetry here! Then diagonal and antidiagonal
-% Ind_SOn_Map2by2Dia = zeros(2*NPixY,2*NPixX,length(temp),4);
-% for ii = 1:length(temp)
-%     Ind_SOn_Map2by2Dia(:,:,ii,1) = squeeze(Ind_SOn_Map2by2(:,:,ii));
-%     Ind_SOn_Map2by2Dia(:,:,ii,2) = squeeze(Ind_SOn_Map2by2(:,:,ii))';
-%     Ind_SOn_Map2by2Dia(:,:,ii,3) = rot90(squeeze(Ind_SOn_Map2by2(:,:,ii)),2);
-%     Ind_SOn_Map2by2Dia(:,:,ii,4) = rot90(squeeze(Ind_SOn_Map2by2(:,:,ii)),2)';
-% end
+% Do a fold symmetry here WITHIN 2by2
+Ind_SOn_Map1by1 = Ind_SOn_Map2by2(1:NPixY,1:NPixX,:);
+Ind_SOn_Map2by2(1:NPixY,NPixX+1:end,:)     = Ind_SOn_Map1by1(:,end:-1:1,:);
+Ind_SOn_Map2by2(NPixY+1:end,1:NPixX,:)     = Ind_SOn_Map1by1(end:-1:1,:,:);
+Ind_SOn_Map2by2(NPixY+1:end,NPixX+1:end,:) = Ind_SOn_Map1by1(end:-1:1,end:-1:1,:);
 % Ind_SOn_Map2by2 = mean(Ind_SOn_Map2by2Dia,4);
 
 PixIndX = mod(1:N_HCout*NPixX,2*NPixX); PixIndX(PixIndX==0) = 2*NPixX;

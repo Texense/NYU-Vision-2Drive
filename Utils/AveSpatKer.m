@@ -20,10 +20,10 @@ end
 if N_HCin<3
     disp('Warning!: Reverse averaged kernal may have duplicate pixel infos')  
 end
-if N_HCout<3
-    disp('Not enough HC for output. Return...') 
-    return
-end
+% if N_HCout<3
+%     disp('Not enough HC for output. Return...') 
+%     return
+% end
 %% For each pixel: Extract a density map around it. Radius at most one HC,
 % so 2HC-by-2HC
 PrySynDist_all = zeros(2*NPixY,2*NPixX,size(C_PQ_Pixel_Us,1));
@@ -70,19 +70,24 @@ for PixInd = 1:size(C_PQ_Pixel_Us,1)
 end
 Ker_PQ_mean = mean(PrySynDist_all,3);
 %% We then symmetricalize. The center should always be NPixY+1, NPixX+1
-Ker_PQ_meanSym = zeros(2*NPixY,2*NPixX,4);
-Ker_PQ_meanSym(:,:,1) = Ker_PQ_mean;
-Ker_PQ_meanSym(2:end,:,2) = Ker_PQ_mean(end:-1:2,:);
-Ker_PQ_meanSym(:,2:end,3) = Ker_PQ_mean(:,end:-1:2);
-Ker_PQ_meanSym(2:end,2:end,4) = Ker_PQ_mean(end:-1:2,end:-1:2);
+Ker_PQ_meanSym = zeros(2*NPixY,2*NPixX,2);
+Ker_PQ_meanSym(2:end,2:end,1) = Ker_PQ_mean(2:end,2:end);
+Ker_PQ_meanSym(2:end,2:end,2) = Ker_PQ_mean(end:-1:2,2:end);
+Ker_PQ_mean = mean(Ker_PQ_meanSym,3);
+Ker_PQ_meanSym = zeros(2*NPixY,2*NPixX,2);
+Ker_PQ_meanSym(2:end,2:end,1) = Ker_PQ_mean(2:end,end:-1:2);
+Ker_PQ_meanSym(2:end,2:end,2) = Ker_PQ_mean(2:end,2:end);
 Ker_PQ_mean = mean(Ker_PQ_meanSym,3);
 % Do a symmetry here! Then diagonal and antidiagonal
-Ker_PQ_meanDia = zeros(2*NPixY,2*NPixX,4);
-Ker_PQ_meanDia(:,:,1) = Ker_PQ_mean(:,:);
+Ker_PQ_meanDia = zeros(2*NPixY,2*NPixX,2);
+Ker_PQ_meanDia(2:end,2:end,1) = Ker_PQ_mean(2:end,2:end);
 Ker_PQ_meanDia(2:end,2:end,2) = Ker_PQ_mean(2:end,2:end)';
-Ker_PQ_meanDia(2:end,2:end,3) = rot90(Ker_PQ_mean(2:end,2:end),2);
-Ker_PQ_meanDia(2:end,2:end,4) = rot90(Ker_PQ_mean(2:end,2:end),2)';
 Ker_PQ_mean = mean(Ker_PQ_meanDia,3);
+
+Ker_PQ_meanDia(2:end,2:end,3) = rot90(Ker_PQ_mean(2:end,2:end),2);
+Ker_PQ_meanDia(2:end,2:end,4) = Ker_PQ_mean(2:end,2:end);
+Ker_PQ_mean = mean(Ker_PQ_meanDia,3);
+
 %% Put Kernel back to Matrix
 C_SS_mean  = zeros(N_HCout*NPixX*N_HCout*NPixY);
 
