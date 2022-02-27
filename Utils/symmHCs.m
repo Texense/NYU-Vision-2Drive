@@ -36,7 +36,7 @@ L4EUseOutOneHC = mean(L4EUseOutAllHC,3);
 
 % add the perturbation
 if FlagPerturb
-    L4EUseOutOneHC = L4EUseOutOneHC + Pert;
+    L4EUseOutOneHC = L4EUseOutOneHC + reshape(Pert,NPixY,NPixX);
 end
 
 % Map the HC back
