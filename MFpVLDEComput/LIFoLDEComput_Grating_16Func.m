@@ -18,12 +18,19 @@ addpath(SaveFolder)
 DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
 
+% LGNL6Mapctgr determines the mapping of input to LGN/L6
 if length(varargin)<1
     LGNL6Mapctgr = 1; 
 else
     LGNL6Mapctgr = varargin{1};
 end
-
+% FlagLargeDom determines the domain
+if length(varargin)<2
+    FlagLargeDom = 1;
+else
+    FlagLargeDom = varargin{2};
+end
+DomStr = {'','Large'};
 % if ~ismember(InputCtgr,[1,2,3])
 %     error('No such input category. Exit.')
 % end
@@ -118,9 +125,14 @@ L4SIp = mean(L4SI./L4Iall);L4CIp = mean(L4CI./L4Iall);L4IIp = mean(L4II./L4Iall)
 LineFit = polyfit(L4Eall,L4Iall,1);
 YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of the range
 Bdry = floor(max(abs(YRange))/100)*100;
-% domain time scale: 160000 cost 3hrs: 
-L4ERange = 0:100:ceil(max(L4Eall)*1.5/100)*100;
-L4IDiffRange = -20*Bdry:100:20*Bdry;
+% domain time scale: 160000 cost 3hrs:
+if FlagLargeDom == 1
+    L4ERange = 0:100:ceil(max(L4Eall)*1.5/100)*100;
+    L4IDiffRange = -20*Bdry:100:20*Bdry;
+else
+    L4ERange = 0:300:ceil(max(L4Eall)*4/100)*100;
+    L4IDiffRange = -40*Bdry:300:40*Bdry;
+end
 
 %% Start parallel computation
 cluster = gcp('nocreate');
@@ -176,7 +188,7 @@ end
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 
 save([SaveFolder ...
-      sprintf('Paper2_LIFoLDE_Fig1V4D2_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s.mat',...
-      Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex)],...
+      sprintf('Paper2_LIFoLDE_Fig1V4D2_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s%s.mat',...
+      Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex,DomStr{FlagLargeDom})],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end
