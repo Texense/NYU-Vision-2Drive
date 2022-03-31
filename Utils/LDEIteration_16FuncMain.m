@@ -1,6 +1,6 @@
 %% LDE iteration w/o figures
 % Output: Iteration firing maps, and L1 diff norm
-function [LDEEpoOut,L2DiffNorm,L2DiffNormNeib,L2Diameter,LDEIequv] = ...
+function [LDEEpoOut,L2DiffNorm,L2DiffNormNeib,L2Diameter,LDEequv] = ...
     LDEIteration_16FuncMain(...
     PixInptCtgrUse,LDEIni,p,Epoc,...
     C_SS_mean,C_CS_mean,C_IS_mean,...
@@ -18,7 +18,8 @@ end
 
 LDEItr = cell(Epoc+1,1);LDEItr{1} = LDEIni;
 LDEEpoOut = cell(Epoc+1,1); LDEEpoOut{1} = LDEIni;
-LDEIout = zeros(size(LDEIni.I,1),Epoc+1); LDEIout(:,1) = LDEIni.I;
+LDEoutVec = zeros(size(LDEIni.I,1)*3,Epoc+1); 
+LDEoutVec(:,1) = [LDEIni.S;LDEIni.C;LDEIni.I];
 for Epc = 1:Epoc
     % First do convolution
     LDEUse = LDEItr{Epc};
@@ -61,15 +62,15 @@ for Epc = 1:Epoc
         'C',LDEOut.C*p + LDEUse.C*(1-p),...
         'I',LDEOut.I*p + LDEUse.I*(1-p));
     LDEItr{Epc+1} = LDENext; LDEEpoOut{Epc+1} = LDEOut;
-    LDEIout(:,Epc+1) = LDEOut.I;
+    LDEoutVec(:,Epc+1) = [LDEOut.S; LDEOut.C; LDEOut.I];
 end
 
 L2DiffNorm = zeros(Epoc,1);
 L2DiffNormNeib = zeros(Epoc,1);
 L2Diameter = zeros(Epoc,1);
 % get an "equilibrium" of I, and assume >150 is fine
-LDEIequv = mean(LDEIout(:,floor((Epc+1)*2/3):end),2);
-LDEIL2Diff = sqrt(mean((LDEIout - repmat(LDEIequv,1,Epoc+1)).^2, 1));
+LDEequv = mean(LDEoutVec(:,floor((Epc+1)*2/3):end),2);
+LDEIL2Diff = sqrt(sum((LDEoutVec - repmat(LDEequv,1,Epoc+1)).^2, 1));
 for Epc = 1:Epoc
     L2DiffNorm(Epc) = ...
         norm([LDEEpoOut{Epc}.S;LDEEpoOut{Epc}.C;LDEEpoOut{Epc}.I] - ...
