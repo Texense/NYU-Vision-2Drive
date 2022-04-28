@@ -21,7 +21,7 @@ function [LDEOutS,LibyAll] = LDEIterFunc_Grating_16Func(L4EmeshX, L4ImeshY,...
     for LGNInd = 1:size(LDEFrfunc_Subf,1)
         for L6Ind = 1:size(LDEFrfunc_Subf,2)
         LDEOutLIBy{LGNInd,L6Ind} = ...
-            interp2(L4EmeshX, L4ImeshY,LDEFrfunc_Subf{LGNInd,L6Ind}, L4EUse,L4IUse);
+            interp2(L4EmeshX, L4ImeshY,LDEFrfunc_Subf{LGNInd,L6Ind}, L4EUse,L4IUse);%,'makima'
         LibyAll(:,LGNInd,L6Ind) = LDEOutLIBy{LGNInd,L6Ind};
         end
     end

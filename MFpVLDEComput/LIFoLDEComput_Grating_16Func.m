@@ -4,6 +4,7 @@
 % Input:  Angle:ranging from 0-90 deg, although we only use 0 7.5 15 22.5
 %         LGNctgr, L6ctgr: ranging from 1-4
 %         LGNL6Mapctgr: 1 for linear, 2 for cosine
+%         FlagLargeDom: 1 for small domain, 2 for large domain
 % Version 1: L6 range switched to [10 60] Hz per L6 neuron
 % Zhuo-Cheng Xiao 01/24/2022
 
@@ -35,7 +36,8 @@ DomStr = {'','Large'};
 %     error('No such input category. Exit.')
 % end
 
-S = load('AllMFPixPara_Paper2TuneFig1V4D2.mat');
+DataPt = 'V4D1';
+S = load(sprintf('AllMFPixPara_Paper2TuneFig1%s.mat',DataPt));
 % For part one: Preparing...
 C_SS_Pixel_Us = S.C_SS_Pixel_Us;
 C_CS_Pixel_Us = S.C_CS_Pixel_Us;
@@ -188,7 +190,7 @@ end
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 
 save([SaveFolder ...
-      sprintf('Paper2_LIFoLDE_Fig1V4D2_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s%s.mat',...
-      Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex,DomStr{FlagLargeDom})],...
+      sprintf('Paper2_LIFoLDE_Fig1%s_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s%s.mat',...
+      DataPt, Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex,DomStr{FlagLargeDom})],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end

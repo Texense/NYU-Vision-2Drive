@@ -10,34 +10,39 @@ function [LDEEpoOut,L2DiffNorm,L2DiffNormNeib,L2Diameter,LDEequv] = ...
 % specify NHCout
 if length(varargin)>0
     N_HCOut = varargin{1};
-    NPixX = varargin{2}; 
+    NPixX = varargin{2};
     NPixY = varargin{3};
-    else
+else
     N_HCOut = 4; NPixX = 10; NPixY = 10;
 end
 
 LDEItr = cell(Epoc+1,1);LDEItr{1} = LDEIni;
 LDEEpoOut = cell(Epoc+1,1); LDEEpoOut{1} = LDEIni;
-LDEoutVec = zeros(size(LDEIni.I,1)*3,Epoc+1); 
+LDEoutVec = zeros(size(LDEIni.I,1)*3,Epoc+1);
 LDEoutVec(:,1) = [LDEIni.S;LDEIni.C;LDEIni.I];
+
+InhKillFlag = true; Thrsld = 70; Highist = [100,97]; % pars for inhibition suppresion
 for Epc = 1:Epoc
     % First do convolution
     LDEUse = LDEItr{Epc};
+    if InhKillFlag % apply inhibition suppresion
+        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist);
+    end
     L4EUse = C_SS_mean*LDEUse.S + ...%- diag(C_SS_mean).*LDEUse.S + ...
-             C_CS_mean*LDEUse.S + ...%- diag(C_CS_mean).*LDEUse.S + ...
-             C_IS_mean*LDEUse.S + ...%- diag(C_IS_mean).*LDEUse.S + ...
-             C_SC_mean*LDEUse.C + ...%- diag(C_SC_mean).*LDEUse.C + ...
-             C_CC_mean*LDEUse.C + ...%- diag(C_CC_mean).*LDEUse.C + ...
-             C_IC_mean*LDEUse.C  ;%- diag(C_IC_mean).*LDEUse.C ;
+        C_CS_mean*LDEUse.S + ...%- diag(C_CS_mean).*LDEUse.S + ...
+        C_IS_mean*LDEUse.S + ...%- diag(C_IS_mean).*LDEUse.S + ...
+        C_SC_mean*LDEUse.C + ...%- diag(C_SC_mean).*LDEUse.C + ...
+        C_CC_mean*LDEUse.C + ...%- diag(C_CC_mean).*LDEUse.C + ...
+        C_IC_mean*LDEUse.C  ;%- diag(C_IC_mean).*LDEUse.C ;
     L4IUse = C_SI_mean*LDEUse.I + ...%- diag(C_SI_mean).*LDEUse.I + ...
-             C_CI_mean*LDEUse.I + ...%- diag(C_CI_mean).*LDEUse.I + ...
-             C_II_mean*LDEUse.I  ;%- diag(C_II_mean).*LDEUse.I ;
+        C_CI_mean*LDEUse.I + ...%- diag(C_CI_mean).*LDEUse.I + ...
+        C_II_mean*LDEUse.I  ;%- diag(C_II_mean).*LDEUse.I ;
     
     % Need to resymmetrize!!...
     L4EUse = symmHCs(L4EUse,N_HCOut,NPixX,NPixY);
-    L4IUse = symmHCs(L4IUse,N_HCOut,NPixX,NPixY);     
-         
-         % Refer to functions
+    L4IUse = symmHCs(L4IUse,N_HCOut,NPixX,NPixY);
+    
+    % Refer to functions
     LDEOut = struct('S',[],'C',[],'I',[]);
     LDEOut.S = LDEIterFunc_Grating_16Func(...
         L4EmeshX, L4ImeshY,...
@@ -74,11 +79,11 @@ LDEIL2Diff = sqrt(sum((LDEoutVec - repmat(LDEequv,1,Epoc+1)).^2, 1));
 for Epc = 1:Epoc
     L2DiffNorm(Epc) = ...
         norm([LDEEpoOut{Epc}.S;LDEEpoOut{Epc}.C;LDEEpoOut{Epc}.I] - ...
-             [LDEEpoOut{end}.S;LDEEpoOut{end}.C;LDEEpoOut{end}.I], 2); 
-
+        [LDEEpoOut{end}.S;LDEEpoOut{end}.C;LDEEpoOut{end}.I], 2);
+    
     L2DiffNormNeib(Epc) = ...
         norm([LDEEpoOut{Epc}.S;LDEEpoOut{Epc}.C;LDEEpoOut{Epc}.I] - ...
-             [LDEEpoOut{Epc+1}.S;LDEEpoOut{Epc+1}.C;LDEEpoOut{Epc+1}.I], 2);
+        [LDEEpoOut{Epc+1}.S;LDEEpoOut{Epc+1}.C;LDEEpoOut{Epc+1}.I], 2);
     L2Diameter(Epc) = max(LDEIL2Diff(Epc:end));
 end
 end

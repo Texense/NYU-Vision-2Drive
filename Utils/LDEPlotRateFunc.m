@@ -98,6 +98,8 @@ if Contour
 %         ctY = get(hh(ctInd),'YData');
 %         ContourInfo(ctInd,:) = polyfit(ctX,ctY,1);
 %     end
+else 
+    ContourInfo = [];
 end
 LDEFrVec = reshape(LDEFrcell,a1*a2,1);
 end
