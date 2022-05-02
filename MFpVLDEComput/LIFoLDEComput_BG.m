@@ -8,7 +8,7 @@
 % Version 1: L6 range switched to [10 60] Hz per L6 neuron
 % Zhuo-Cheng Xiao 01/24/2022
 
-function [] = LIFoLDEComput_Grating_16Func(Angle, LGNctgr, L6ctgr, varargin)
+function [] = LIFoLDEComput_BG(varargin)
 CurrentFolder = pwd
 %FigurePath = [CurrentFolder '/Figures'];
 addpath(CurrentFolder)
@@ -19,38 +19,19 @@ addpath(SaveFolder)
 DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
 
-% LGNL6Mapctgr determines the mapping of input to LGN/L6
-if length(varargin)<1
-    LGNL6Mapctgr = 1; 
-else
-    LGNL6Mapctgr = varargin{1};
-end
 % FlagLargeDom determines the domain
-if length(varargin)<2
+if length(varargin)<1
     FlagLargeDom = 1;
 else
-    FlagLargeDom = varargin{2};
+    FlagLargeDom = varargin{1};
 end
-DomStr = {'','Large'};
-% if ~ismember(InputCtgr,[1,2,3])
-%     error('No such input category. Exit.')
-% end
+DomStr = {'Small','Large'};
 
 DataPt = 'V4D2';
 S = load(sprintf('AllMFPixPara_Paper2TuneFig1%s.mat',DataPt));
 % For part one: Preparing...
-C_SS_Pixel_Us = S.C_SS_Pixel_Us;
-C_CS_Pixel_Us = S.C_CS_Pixel_Us;
-C_IS_Pixel_Us = S.C_IS_Pixel_Us;
-C_SC_Pixel_Us = S.C_SC_Pixel_Us;
-C_CC_Pixel_Us = S.C_CC_Pixel_Us;
-C_IC_Pixel_Us = S.C_IC_Pixel_Us;
-C_SI_Pixel_Us = S.C_SI_Pixel_Us;
-C_CI_Pixel_Us = S.C_CI_Pixel_Us;
-C_II_Pixel_Us = S.C_II_Pixel_Us;
 N_Slgn = S.N_Slgn; N_Clgn = S.N_Clgn; N_Ilgn = S.N_Ilgn;
 NS_L6 = S.NS_L6; NC_L6 = S.NC_L6; NI_L6 = S.NI_L6;
-L6Ord_F  = S.L6Ord_F;
 N_HC = S.N_HC; NPixX = S.NPixX; NPixY = S.NPixY;
 FrSPixVec = S.FrSPixVec;
 FrCPixVec = S.FrCPixVec;
@@ -68,72 +49,44 @@ tau_gaba_R=S.tau_gaba_R; tau_gaba_D=S.tau_gaba_D;
 rhoE_ampa=S.rhoE_ampa; rhoE_nmda=S.rhoE_nmda; 
 rhoI_ampa=S.rhoI_ampa; rhoI_nmda=S.rhoI_nmda; 
 LGNFreq = S.LGNFreq;
+N_SS = S.N_SS;  N_SC = S.N_SC;  N_SI = S.N_SI; 
+N_CS = S.N_CS;  N_CC = S.N_CC;  N_CI = S.N_CI;            
+N_IS = S.N_IS;  N_IC = S.N_IC;  N_II = S.N_II;
 clear S
 %% Prepare for a canonical pixel
-Angles_4Input = Angle + [0 45 90 135];
-lgn_SOnOff = [45+abs(mod(Angles_4Input,180)-90)/2;
-              45-abs(mod(Angles_4Input,180)-90)/2]/1e3;      
-%%%%%%%%% These are unused in LIF-only function... %%%%%%%          
-lgn_COnOff = [0.045;
-              0.045];
-lgn_I =       0.045; 
-%%%%%%%%% These are unused in LIF-only function... %%%%%%%  
-% redefine low-up bounds for L6: [10 54]
-NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
-L6up = 60; L6low = 6; %[10 54; 12 50]
-if LGNL6Mapctgr == 1
-   lgn_SOnOff = [45+abs(mod(Angles_4Input,180)-90)/2;
-                 45-abs(mod(Angles_4Input,180)-90)/2]/1e3;  
-   FL6_Angle1 = ((abs(mod(Angles_4Input,180)-90)/90)      *(L6up-L6low)+L6low) /1e3; % get L6 frs
-   ExpTex = 'Linear';
-elseif LGNL6Mapctgr == 2
-   lgn_SOnOff = [45+abs(mod(Angles_4Input,180)-90)/2;
-                 45-abs(mod(Angles_4Input,180)-90)/2]/1e3;  
-   FL6_Angle1 = ((cosd(abs(mod(Angles_4Input,180))*2)+1)/2*(L6up-L6low)+L6low) /1e3; 
-   ExpTex = 'Cosine_L6';
-elseif LGNL6Mapctgr == 3
-   lgn_SOnOff = [45+(cosd(abs(mod(Angles_4Input,180))*2)+1)/2*45;
-                 45-(cosd(abs(mod(Angles_4Input,180))*2)+1)/2*45]/1e3;  
-   FL6_Angle1 = ((cosd(abs(mod(Angles_4Input,180))*2)+1)/2*(L6up-L6low)+L6low) /1e3; 
-   
-   ExpTex = 'Cosine_All';   
-else
-   disp("illigal LGN->L6 mapping.")
-%rL6E = [1.0; 1.75; 2.5]; rL6I = 3*rL6E;
-end                            
-rL6SU = NL6S*FL6_Angle1(L6ctgr); %rL6EU = rL6E(InputCtgr); 
-rL6CU = NL6C*FL6_Angle1(L6ctgr);
-rL6IU = NL6I*FL6_Angle1(L6ctgr);
-lgn_SU = lgn_SOnOff(:,LGNctgr);
+NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6; 
+rL6_One = 0.007;
+rL6SU = NL6S*rL6_One; %rL6EU = rL6E(InputCtgr); 
+rL6CU = NL6C*rL6_One;
+rL6IU = NL6I*rL6_One;
 
-% Determine L4 Input from a range
-L4SE = zeros(N_HC*NPixX*N_HC*NPixY,1);
-L4SI = zeros(N_HC*NPixX*N_HC*NPixY,1);
-L4CE = zeros(N_HC*NPixX*N_HC*NPixY,1);
-L4CI = zeros(N_HC*NPixX*N_HC*NPixY,1);
-L4IE = zeros(N_HC*NPixX*N_HC*NPixY,1);
-L4II = zeros(N_HC*NPixX*N_HC*NPixY,1);
-for PInd = 1:N_HC*NPixX*N_HC*NPixY
-L4SE(PInd) = (C_SS_Pixel_Us(PInd,:)*FrSPixVec          + C_SC_Pixel_Us(PInd,:)*FrCPixVec);
-L4SI(PInd) =  C_SI_Pixel_Us(PInd,:)*FrIPixVec ;
-L4CE(PInd) = (C_CS_Pixel_Us(PInd,:)*FrSPixVec          + C_CC_Pixel_Us(PInd,:)*FrCPixVec);
-L4CI(PInd) =  C_CI_Pixel_Us(PInd,:)*FrIPixVec ;
-L4IE(PInd) = (C_IS_Pixel_Us(PInd,:)*FrSPixVec          + C_IC_Pixel_Us(PInd,:)*FrCPixVec);
-L4II(PInd) =  C_II_Pixel_Us(PInd,:)*FrIPixVec ;
-end
+rLGN_One = 0.02;
+lgn_SU = [rL6_One;rLGN_One];
+lgn_COnOff = [rL6_One;rLGN_One];
+lgn_I =       rL6_One; 
+% Determine L4 Input proportions from a range
+fS = 2.5; fC = 8; fI = 16;
+
+L4SE = (N_SS*fS + N_SC*fC);
+L4SI =  N_SI*fI ;
+L4CE = (N_CS*fS + N_CC*fC);
+L4CI =  N_CI*fI ;
+L4IE = (N_IS*fS + N_IC*fC);
+L4II =  N_II*fI ;
+
 L4Eall = L4SE+L4CE+L4IE; L4Iall = L4SI+L4CI+L4II;
 L4SEp = mean(L4SE./L4Eall);L4CEp = mean(L4CE./L4Eall);L4IEp = mean(L4IE./L4Eall);
 L4SIp = mean(L4SI./L4Iall);L4CIp = mean(L4CI./L4Iall);L4IIp = mean(L4II./L4Iall);
-LineFit = polyfit(L4Eall,L4Iall,1);
-YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of the range
-Bdry = floor(max(abs(YRange))/100)*100;
+
+LineFit = [L4Iall/L4Eall,0];
+
 % domain time scale: 160000 cost 3hrs:
 if FlagLargeDom == 1
-    L4ERange = 0:100:ceil(max(L4Eall)*1.5/100)*100;
-    L4IDiffRange = -20*Bdry:100:20*Bdry;
+    L4ERange = 0:L4Eall/100:L4Eall*3;
+    L4IDiffRange = -1*L4Iall:L4Iall/200:1*L4Iall;
 else
-    L4ERange = 0:600:ceil(max(L4Eall)*12/100)*100;
-    L4IDiffRange = -120*Bdry:600:60*Bdry;
+    L4ERange = 0:L4Eall/3:L4Eall*30;
+    L4IDiffRange = -15*L4Iall:L4Iall/3:15*L4Iall;
 end
 
 %% Start parallel computation
@@ -150,7 +103,7 @@ f_EnIOut = cell(a0,1);
 % FailureIndicate = zeros(a0,1);
 L4ERcrd = zeros(a0,1);
 L4IRcrd = zeros(a0,1);
-HyperPara = {50*1e3};
+HyperPara = {100*1e3};
 parfor  LDEInd = 1:a0
         L4EInd = ceil(LDEInd/length(L4IDiffRange));
         L4IDiffInd = mod(LDEInd,length(L4IDiffRange));
@@ -190,7 +143,6 @@ end
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 
 save([SaveFolder ...
-      sprintf('Paper2_LIFoLDE_Fig1%s_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s%s.mat',...
-      DataPt, Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex,DomStr{FlagLargeDom})],...
+      sprintf('Paper2_LIFoLDE_Fig4Bg%s_%s.mat',DataPt, DomStr{FlagLargeDom})],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end
