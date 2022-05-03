@@ -23,15 +23,17 @@
 %        meanVs              mean V of E and I
 
 %% Ver 5:       For single pixels
+%% Ver 6:       Bg features added: lgn_SU and lgn_CU are 2X1 vector (Then drive) or scalar (Then bg)?
 % iteration
-% Zhuo-Cheng Xiao 12/11/2021
+% Zhuo-Cheng Xiao 05/03/2022
 function [f_EnIOut]...
            = LIFo_SinglePixel(...
 ...% MF Parameters                     
                      LGNFreq, L4SE,L4SI, L4CE,L4CI, L4IE,L4II,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
                      S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
-                     lgn_SU, lgn_COnOff,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
+                     lgn_SU, lgn_CU,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
+...% A big problem:  lgn_COnOff,lgn_I was unquoted - so using 45 Hz by defalut                    
                      gL_E,gL_I,Ve,Vi, tau_ref,... %5
 ...% Below are LIF details
                      tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
@@ -64,17 +66,34 @@ end
 dt = 0.1;
 
 %% All input events
+% Note: If rate is per second, need to be divided by 1e3 to rescale to ms
 TimeFrac = 1/(LIFSimuT/1e3)/LGNFreq;
-lgn_Events    = PoissonInputForNetwork(3, 45*[N_Slgn;N_Clgn;N_Ilgn]/1e3 ,LIFSimuT*TimeFrac,dt,true);
-AmbPix_Events = PoissonInputForNetwork(3,[rS_amb;rC_amb;rI_amb],LIFSimuT*TimeFrac,dt,true);
-L6Pix_Events  = PoissonInputForNetwork(3,[rL6SU; rL6CU; rL6IU], LIFSimuT*TimeFrac,dt,true);
-L4Pix_EventsE = PoissonInputForNetwork(3,[L4SE*(1-p_EEFail); L4CE*(1-p_EEFail); L4IE]/1e3,LIFSimuT*TimeFrac,dt,true); % Need to count EE failure here
-L4Pix_EventsI = PoissonInputForNetwork(3,[L4SI;              L4CI;              L4II]/1e3,LIFSimuT*TimeFrac,dt,true);
+
+AmbPix_Events = PoissonInputForNetwork(3,[rS_amb;rC_amb;rI_amb],                          LIFSimuT*TimeFrac,dt,true); % rQ_amb are per ms
+L6Pix_Events  = PoissonInputForNetwork(3,[rL6SU; rL6CU; rL6IU],                           LIFSimuT*TimeFrac,dt,true); % rL6 are per ms
+L4Pix_EventsE = PoissonInputForNetwork(3,[L4SE*(1-p_EEFail); L4CE*(1-p_EEFail); L4IE]/1e3,LIFSimuT*TimeFrac,dt,true); % Need to count EE failure here 
+L4Pix_EventsI = PoissonInputForNetwork(3,[L4SI;              L4CI;              L4II]/1e3,LIFSimuT*TimeFrac,dt,true); % L4E/I are per second
 gL = [gL_E*ones(2,1); gL_I*ones(1)];
 
-lgn_Slifort = 45*ones(2,1)/1e3;
-lgnAdj = lgn_SU./lgn_Slifort;
-lgnAdjU = reshape(repmat(lgnAdj,1,floor(size(L4Pix_EventsE,2)/2))', 1, 2*floor(size(L4Pix_EventsE,2)/2));
+% LGN input pissons are handeled specifically:
+if length(lgn_SU) == 2 % drive
+    disp('Drive regime. Use Phase variant LGN input')
+    F_LGN1ort = 45/1e3;
+    lgn_Events = PoissonInputForNetwork(3,[N_Slgn;N_Clgn;N_Ilgn]*F_LGN1ort,             LIFSimuT*TimeFrac,dt,true);
+    lgn_Dr_dflt = F_LGN1ort*ones(2,1);
+    % Adjust S lgn according to phase. Do the same thing to C 
+    lgnSAdj = lgn_SU./lgn_Dr_dflt;
+    lgnS_AdjU = reshape(repmat(lgnSAdj,1,floor(size(L4Pix_EventsE,2)/2))', 1, 2*floor(size(L4Pix_EventsE,2)/2));
+    
+    lgnCAdj = lgn_CU./lgn_Dr_dflt;
+    lgnC_AdjU = reshape(repmat(lgnCAdj,1,floor(size(L4Pix_EventsE,2)/2))', 1, 2*floor(size(L4Pix_EventsE,2)/2));
+    % I will be same as ort, so actually lgnI input is redundant.
+elseif length(lgn_SU) == 1 % bg
+    disp('Background regime. Use Phase consistent LGN input')
+    lgn_Events = PoissonInputForNetwork(3,[N_Slgn;N_Clgn;N_Ilgn].*[lgn_SU;lgn_CU;lgn_I],LIFSimuT*TimeFrac,dt,true); % lgn_Q should be per ms
+else
+    disp('***Illigal LGN input. Returning...')
+end
 
 %% Each on/off is a cycle for LIF. For each cyc, initate a new start.
 TCyc = floor(1/TimeFrac);
@@ -90,7 +109,10 @@ for TInt = 1:TCyc
 
     % New Gs
     lgnPix_Events = lgn_Events(:,randperm(size(lgn_Events,2)));
-    lgnPix_Events(1,1:length(lgnAdjU)) = lgnPix_Events(1,1:length(lgnAdjU)).*lgnAdjU;
+    if length(lgn_SU) == 2 % only adjust in drive regime
+        lgnPix_Events(1,1:length(lgnS_AdjU)) = lgnPix_Events(1,1:length(lgnS_AdjU)).*lgnS_AdjU; % first row: S
+        lgnPix_Events(2,1:length(lgnC_AdjU)) = lgnPix_Events(2,1:length(lgnC_AdjU)).*lgnC_AdjU; % second row: C
+    end
 
     winAMPA = 0:dt:tau_ampa_D*3;
     winNMDA = 0:dt:tau_nmda_D*3;

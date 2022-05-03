@@ -61,9 +61,9 @@ rL6CU = NL6C*rL6_One;
 rL6IU = NL6I*rL6_One;
 
 rLGN_One = 0.02;
-lgn_SU = [rL6_One;rLGN_One];
-lgn_COnOff = [rL6_One;rLGN_One];
-lgn_I =       rL6_One; 
+lgn_S = rLGN_One;
+lgn_C = rLGN_One;
+lgn_I = rLGN_One; 
 % Determine L4 Input proportions from a range
 fS = 2.5; fC = 8; fI = 16;
 
@@ -129,7 +129,7 @@ parfor  LDEInd = 1:a0
                      LGNFreq, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
                      S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
-                     lgn_SU, lgn_COnOff,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
+                     lgn_S, lgn_C,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
                      gL_E,gL_I,Ve,Vi, tau_ref,... %5
 ...% Below are LIF details
                      tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
