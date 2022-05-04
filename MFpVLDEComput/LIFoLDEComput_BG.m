@@ -25,7 +25,8 @@ if length(varargin)<1
 else
     FlagLargeDom = varargin{1};
 end
-DomStr = {'Small','Large'};
+DomStr = {'Smaller','Small','Large'};
+disp(sprintf('Computing %s domain.', DomStr{FlagLargeDom}))
 
 DataPt = 'V4D2';
 S = load(sprintf('AllMFPixPara_Paper2TuneFig1%s.mat',DataPt));
@@ -81,12 +82,16 @@ L4SIp = mean(L4SI./L4Iall);L4CIp = mean(L4CI./L4Iall);L4IIp = mean(L4II./L4Iall)
 LineFit = [L4Iall/L4Eall,0];
 
 % domain time scale: 160000 cost 3hrs:
-if FlagLargeDom == 1
-    L4ERange = 0:L4Eall/100:L4Eall*3;
-    L4IDiffRange = -1*L4Iall:L4Iall/200:1*L4Iall;
-else
-    L4ERange = 0:L4Eall/3:L4Eall*30;
-    L4IDiffRange = -15*L4Iall:L4Iall/3:15*L4Iall;
+switch FlagLargeDom
+    case 1
+        L4ERange =               0:L4Eall/100:L4Eall*3; % small and dense
+        L4IDiffRange = -0.8*L4Iall:L4Iall/100:0.8*L4Iall;
+    case 2
+        L4ERange =               0:L4Eall/10 :L4Eall*8;
+        L4IDiffRange = -3*L4Iall  :L4Iall/20 :3*L4Iall;        
+    case 3
+        L4ERange =               0:L4Eall/3  :L4Eall*30; % large and coarse
+        L4IDiffRange = -15*L4Iall :L4Iall/3  :15*L4Iall;
 end
 
 %% Start parallel computation

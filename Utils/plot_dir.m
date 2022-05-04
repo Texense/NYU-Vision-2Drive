@@ -1,4 +1,4 @@
-function [h1, h2] = plot_dir (vX, vY)
+function [h1, h2] = plot_dir (vX, vY,varargin)
 %function [h1, h2] = plot_dir (vX, vY)
 %Plotting x-y variables with direction indicating vector to the next element.
 %Example
@@ -6,6 +6,12 @@ function [h1, h2] = plot_dir (vX, vY)
 %   vY = sin (vX);
 %   plot_dir(vX, vY);
 %% NOTE!! vX, vY has to be column vectors!
+if length(varargin)<1
+    arrC = 'r';
+else
+    arrC = varargin{1};
+end
+
 rMag = 0.5;
 % Length of vector
 lenTime = length(vX);
@@ -27,5 +33,5 @@ vPy = (vYQ1 - vYQ0) * rMag;
 % make plot 
 h1 = plot (vX, vY, '.k-'); hold on;
 % add arrows 
-h2 = quiver (vXQ0,vYQ0, vPx, vPy, 0, 'r'); grid on; hold off
+h2 = quiver (vXQ0,vYQ0, vPx, vPy, 0, arrC); grid on; hold off
 %axis equal
