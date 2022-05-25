@@ -16,17 +16,23 @@ elseif size(Vec,2) == 3
     set(gca,'YDir','normal')
 end
 %% Plot HC boundaries
+if nargin > 6
+    PixNum = varargin{3};
+else
+    PixNum = 10;
+end
+
 hold on
-XHc = floor(XPix/10); YHc = floor(YPix/10);
+XHc = floor(XPix/PixNum); YHc = floor(YPix/PixNum);
 if XHc>1
 for VerInd = 1:XHc -1
-    plot(ones(length(0:YPix))*(VerInd*10+0.5),0:YPix,'g-','LineWidth',1)
+    plot(ones(length(0:YPix))*(VerInd*PixNum+0.5),0:YPix,'g-','LineWidth',1)
 end
 end
 
 if YHc>1
 for HorInd = 1:YHc -1
-    plot(0:XPix,ones(length(0:XPix))*(HorInd*10+0.5),'g-','LineWidth',1)
+    plot(0:XPix,ones(length(0:XPix))*(HorInd*PixNum+0.5),'g-','LineWidth',1)
 end
 end
 

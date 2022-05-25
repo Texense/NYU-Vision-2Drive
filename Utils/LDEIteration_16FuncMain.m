@@ -21,11 +21,17 @@ LDEEpoOut = cell(Epoc+1,1); LDEEpoOut{1} = LDEIni;
 LDEoutVec = zeros(size(LDEIni.I,1)*3,Epoc+1);
 LDEoutVec(:,1) = [LDEIni.S;LDEIni.C;LDEIni.I];
 
-InhKillFlag = true; Thrsld = 70; Highist = [100,97]; % pars for inhibition suppresion
+if length(varargin)>3
+    InhKillFlag = varargin{4};
+else
+    InhKillFlag = true;
+end
+%InhKillFlag = true;  % pars for inhibition suppresion
 for Epc = 1:Epoc
     % First do convolution
     LDEUse = LDEItr{Epc};
     if InhKillFlag % apply inhibition suppresion
+        Thrsld = 70; Highist = [100,97];
         LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist);
     end
     L4EUse = C_SS_mean*LDEUse.S + ...%- diag(C_SS_mean).*LDEUse.S + ...
