@@ -1,12 +1,20 @@
 % Symmetrize 
 % Mode 1: Symmetrize a Field with some noise
 % Mode 2: add symmetric perturbations
+
+% PertMode: 'add' add the Pert to one HC
+%           'prod' multiply to one HC
 function L4EUseOut = symmHCs(L4EUse,N_HCOut,NPixX,NPixY,varargin)
 if isempty(varargin)
     FlagPerturb = false;
 else
     FlagPerturb = true;
     Pert = varargin{1};
+    if length(varargin)>1
+        PertMode = varargin{2};
+    else
+        PertMode = 'add'; % additive noise by defalut
+    end
 end
 
 
@@ -36,7 +44,13 @@ L4EUseOutOneHC = mean(L4EUseOutAllHC,3);
 
 % add the perturbation
 if FlagPerturb
-    L4EUseOutOneHC = L4EUseOutOneHC + reshape(Pert,NPixY,NPixX);
+    if strcmpi(PertMode,'prod')
+        L4EUseOutOneHC = L4EUseOutOneHC .* reshape(Pert,NPixY,NPixX);
+    elseif strcmpi(PertMode,'add')
+    L4EUseOutOneHC = L4EUseOutOneHC + reshape(Pert,NPixY,NPixX);    
+    else
+        diap('***Illigal pert mode. Quiting...')
+    end
 end
 
 % Map the HC back

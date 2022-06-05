@@ -14,11 +14,12 @@ CurrentFolder = pwd
 addpath(CurrentFolder)
 addpath([CurrentFolder '/Utils'])
 addpath([CurrentFolder '/Data'])
-SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/'];
+SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/LARGE16/'];
 addpath(SaveFolder)
 DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
-
+DataFolder1 = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/'];
+addpath(DataFolder1)
 % LGNL6Mapctgr determines the mapping of input to LGN/L6
 if length(varargin)<1
     LGNL6Mapctgr = 1; 
@@ -31,7 +32,7 @@ if length(varargin)<2
 else
     FlagLargeDom = varargin{2};
 end
-DomStr = {'','Large'};
+DomStr = {'','Large','LARGER'};
 % if ~ismember(InputCtgr,[1,2,3])
 %     error('No such input category. Exit.')
 % end
@@ -128,12 +129,16 @@ LineFit = polyfit(L4Eall,L4Iall,1);
 YRange = L4Iall - (LineFit(1)*L4Eall+LineFit(2)); % We plan to use 2 times of the range
 Bdry = floor(max(abs(YRange))/100)*100;
 % domain time scale: 160000 cost 3hrs:
-if FlagLargeDom == 1
-    L4ERange = 0:100:ceil(max(L4Eall)*1.5/100)*100;
-    L4IDiffRange = -20*Bdry:100:20*Bdry;
-else
-    L4ERange = 0:600:ceil(max(L4Eall)*12/100)*100;
-    L4IDiffRange = -120*Bdry:600:60*Bdry;
+switch FlagLargeDom
+    case 1
+        L4ERange = 0:100:ceil(max(L4Eall)*1.5/100)*100;
+        L4IDiffRange = -20*Bdry:100:20*Bdry;
+    case 2
+        L4ERange = 0:600:ceil(max(L4Eall)*12/100)*100;
+        L4IDiffRange = -120*Bdry:600:60*Bdry;
+    case 3
+        L4ERange = 0:2000:ceil(max(L4Eall)*50/100)*100;
+        L4IDiffRange = -500*Bdry:2000:500*Bdry;
 end
 
 %% Start parallel computation

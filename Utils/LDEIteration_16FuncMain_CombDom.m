@@ -28,7 +28,12 @@ LDEoutVec(:,1) = [LDEIni.S;LDEIni.C;LDEIni.I];
 FuncUseAll = zeros(Epoc,1);
 
 InhKillFlag = true; Thrsld = 70; Highist = [100,97]; % pars for inhibition suppresion
+NANGlobalFlag = false;
 for Epc = 1:Epoc
+    if NANGlobalFlag
+        continue
+    end
+    
     % First do convolution
     LDEUse = LDEItr{Epc};
     if InhKillFlag % apply inhibition suppresion
@@ -85,10 +90,6 @@ for Epc = 1:Epoc
         FuncUse = FuncUse+1;
     end
     
-    if FuncUse>FuncN && nanFlag % return if used up all functions but still getting nans
-        fprintf('***Warning! NAN results in the %d epoch. Returning...\n',Epc)
-        return
-    end
     
     % record the function used.
     FuncUseAll(Epc) = FuncUse;
@@ -99,22 +100,31 @@ for Epc = 1:Epoc
         'I',LDEOut.I*p + LDEUse.I*(1-p));
     LDEItr{Epc+1} = LDENext; LDEEpoOut{Epc+1} = LDEOut;
     LDEoutVec(:,Epc+1) = [LDEOut.S; LDEOut.C; LDEOut.I];
+
+    if FuncUse>FuncN && nanFlag % return if used up all functions but still getting nans
+        fprintf('***Warning! NAN results in the %d epoch. Returning...\n',Epc)
+        NANGlobalFlag = true;
+    end
 end
 
 %L2DiffNorm = zeros(Epoc,1);
 L2DiffNormNeib = zeros(Epoc,1);
 L2Diameter = zeros(Epoc,1);
+LDEequv = [];
+LDEIL2Diff = [];
 % get an "equilibrium" of I, and assume >150 is fine
-LDEequv = mean(LDEoutVec(:,floor((Epc+1)*2/3):end),2);
-LDEIL2Diff = sqrt(sum((LDEoutVec - repmat(LDEequv,1,Epoc+1)).^2, 1));
-for Epc = 1:Epoc
-%     L2DiffNorm(Epc) = ...
-%         norm([LDEEpoOut{Epc}.S;LDEEpoOut{Epc}.C;LDEEpoOut{Epc}.I] - ...
-%         [LDEEpoOut{end}.S;LDEEpoOut{end}.C;LDEEpoOut{end}.I], 2);
-    
-    L2DiffNormNeib(Epc) = ...
-        norm([LDEEpoOut{Epc}.S;LDEEpoOut{Epc}.C;LDEEpoOut{Epc}.I] - ...
-        [LDEEpoOut{Epc+1}.S;LDEEpoOut{Epc+1}.C;LDEEpoOut{Epc+1}.I], 2);
-    L2Diameter(Epc) = max(LDEIL2Diff(Epc:end));
+if ~NANGlobalFlag
+    LDEequv = mean(LDEoutVec(:,floor((Epc+1)*2/3):end),2);
+    LDEIL2Diff = sqrt(sum((LDEoutVec - repmat(LDEequv,1,Epoc+1)).^2, 1));
+    for Epc = 1:Epoc
+        %     L2DiffNorm(Epc) = ...
+        %         norm([LDEEpoOut{Epc}.S;LDEEpoOut{Epc}.C;LDEEpoOut{Epc}.I] - ...
+        %         [LDEEpoOut{end}.S;LDEEpoOut{end}.C;LDEEpoOut{end}.I], 2);
+        
+        L2DiffNormNeib(Epc) = ...
+            norm([LDEEpoOut{Epc}.S;LDEEpoOut{Epc}.C;LDEEpoOut{Epc}.I] - ...
+            [LDEEpoOut{Epc+1}.S;LDEEpoOut{Epc+1}.C;LDEEpoOut{Epc+1}.I], 2);
+        L2Diameter(Epc) = max(LDEIL2Diff(Epc:end));
+    end
 end
 end

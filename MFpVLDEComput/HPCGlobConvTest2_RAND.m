@@ -1,11 +1,8 @@
 %% HPC for large amount of IC tests. Start from NESS
-% AngId: 1-13 for 0:7.5:90
-% ContrastID: B. "1/2 contrast" = bg + 1/2 * (X_E-bg, X_I-bg)
-%             C. (normal) full contrast = (X_E, X_I)
-%             D. super-charged = bg + 3/2 * (X_E-bg, X_I-bg)
+% BlockID 1,2,5
 % SaveID Just for saving tag
 
-function [] = HPCGlobConvTest2_NESS(AngId, ContrastID, NSample)
+function [] = HPCGlobConvTest2_RAND(BlockID, NSample)
 CurrentFolder = pwd
 %FigurePath = [CurrentFolder '/Figures/Demo022722/'];
 addpath(CurrentFolder)
@@ -23,20 +20,23 @@ load('GlobalConvTestWS1.mat')
 clear LDEFrfuncLarge LDEFrfunc
 
 %% NEW unified functions
-%load('ICTesfuncLarge.mat')
-%load('ICTesfuncSmall.mat')
-DomList =  {'Small','Larger'}; % we have small, large, larger domains
 DataPoint = 'V4D2'; %'V4D1'; 'V5D1'
+DomList =  {'Small','Larger','LARGER'}; % we have small, large, larger domains
 
-Large = load(sprintf('Func16%sAng%s%s.mat',DataPoint,'0.0',DomList{2}),...
+AngInpt = '0.0';
+
+LARGER = load(sprintf('Func16%sAng%s%s.mat',DataPoint,AngInpt,DomList{3}),...
     'LDEFrfunc','L4EmeshX','L4ImeshY');
 
-Small = load(sprintf('Func16%sAng%s%s.mat',DataPoint,'0.0',DomList{1}),...
+Large = load(sprintf('Func16%sAng%s%s.mat',DataPoint,AngInpt,DomList{2}),...
     'LDEFrfunc','L4EmeshX','L4ImeshY');
 
-L4EmeshXAll = {Small.L4EmeshX, Large.L4EmeshX};
-L4ImeshYAll = {Small.L4ImeshY, Large.L4ImeshY};
-LDEFrfuncAll = {Small.LDEFrfunc, Large.LDEFrfunc};
+Small = load(sprintf('Func16%sAng%s%s.mat',DataPoint,AngInpt,DomList{1}),...
+    'LDEFrfunc','L4EmeshX','L4ImeshY');
+
+L4EmeshXAll = {Small.L4EmeshX, Large.L4EmeshX, LARGER.L4EmeshX};
+L4ImeshYAll = {Small.L4ImeshY, Large.L4ImeshY, LARGER.L4ImeshY};
+LDEFrfuncAll = {Small.LDEFrfunc, Large.LDEFrfunc, LARGER.LDEFrfunc};
 %% rest of folders
 CurrentFolder = pwd; % Since loaded data will overwrite pwd...
 SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/GlobConv/']; % V1D2
@@ -44,37 +44,15 @@ SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/GlobConv/']; % V1
 addpath(SaveFolder)
 %% 4.1 Test a large sample
 %% first prepare a driven IC
-AngleAll = 0:7.5:90;
-AngleInpt = AngleAll(AngId);% has to be multiples of 7.5
-RotInd = floor(AngleInpt/45); % 0-3
-MirInd = mod(floor(AngleInpt/22.5),2); % 0: no mirror; 1: mirror
-switch MirInd % find the corresponding source
-    case 0
-        AngSource = mod(AngleInpt,45);
-    case 1
-        AngSource = mod(-AngleInpt,45);
-end
 
-% Use the source, decide which response function for angle should I use
-AngFuncCtgrCdid = 0:7.5:22.5;
-[~,AngFuncCtgr] = min(abs(AngFuncCtgrCdid - AngSource));
+LDEIC_temp.S = zeros(N_HCOut^2*NPixX*NPixY,1);
+LDEIC_temp.C = zeros(N_HCOut^2*NPixX*NPixY,1);
+LDEIC_temp.I = zeros(N_HCOut^2*NPixX*NPixY,1); 
 
-AngleList = {'0.0','7.5','15.0','22.5'};
-AngPrint = AngleList{AngFuncCtgr};
-load(sprintf('LDETraces_ang%s.mat',AngPrint))
-LDEICPart = LDEEpoOutAll{1}{end};
-LDEICPart = HCRot(LDEICPart,RotInd,N_HCOut,NPixX,NPixY,MirInd); % rotate to the write direction
-
-% Compose contrasts
-ICWeights = 1/2:1/2:3/2;
-fields = fieldnames(LDEICPart);
-for FInd = 1:length(fields)
-    LDEIC_temp.(fields{FInd}) = ...
-        ICWeights(ContrastID) * LDEICPart.(fields{FInd});          
-end
 
 % Now perturbe and collect a group
-PertBckSz = 2; % size of the block
+BckSzAll = [1,2,5];
+PertBckSz = BckSzAll(BlockID); % size of the block
 BlockN = floor(NPixX/PertBckSz);
   % Use Kronecker Tensor Product
 ICTestAll = cell(NSample,1);
@@ -83,17 +61,18 @@ for SampInd = 1:NSample
     Block = ones(PertBckSz);
     PertMtx = ones(BlockN);
     
-    PertPlus  = rand(BlockN)    +1; % random in [1,2]
-    Pertminus = rand(BlockN)/2+1/2; % random in [1/2,1]
+    EPert = 69*rand(BlockN) +1; % random in [1,2]
+    IPert = (4*rand(BlockN)+2).* EPert; % random in [1/2,1]
     
-    [PlusInd, MinusInd] = RandPermIndMat(BlockN,BlockN,randi([5 20])); % randomly use the random numbers above
-    PertMtx(PlusInd)  = PertPlus(PlusInd);
-    PertMtx(MinusInd) = Pertminus(MinusInd);
-    PertMtxUse = kron(PertMtx,Block);
+    SPert = EPert/1.6;
+    CPert = SPert*3;
+    
+    %PertMtxUse = kron(PertMtx,Block);
     % take a blockwise peerturbation
-
-    LDEIC_pert.S = symmHCs(LDEIC_pert.S,N_HCOut,NPixX,NPixY,PertMtxUse,'prod');
-    LDEIC_pert.C = symmHCs(LDEIC_pert.C,N_HCOut,NPixX,NPixY,PertMtxUse,'prod');
+    LDEIC_pert.S = symmHCs(LDEIC_pert.S,N_HCOut,NPixX,NPixY,kron(SPert,Block),'add');
+    LDEIC_pert.C = symmHCs(LDEIC_pert.C,N_HCOut,NPixX,NPixY,kron(CPert,Block),'add');
+    LDEIC_pert.I = symmHCs(LDEIC_pert.I,N_HCOut,NPixX,NPixY,kron(IPert,Block),'add');
+    
     ICTestAll{SampInd} = LDEIC_pert;
     
 end
@@ -147,22 +126,6 @@ for TestInd = 1:NSample
     fprintf("sample %d is done.\n",TestInd)
 end
 toc
-save([SaveFolder sprintf('Paper2GlobConv_IC%d_Ctrst%d.mat',...
-    AngId,ContrastID)], 'LDEPertOutAll','L2Diff_EIWgtsAll','DiffVecAll')
-end
-
-% generate random binary matrix
-% p row q col
-% plus and minus randomly selected from n entries
-function [PlusInd, MinusInd] = RandPermIndMat(p,q,n)
-a = zeros(p,q);
-perturbIndBoth = randperm(numel(a), n);
-PMInd = logical(randi(2,size(perturbIndBoth,1),size(perturbIndBoth,2))-1);
-
-PlusInd = a; MinusInd = a;
-PlusInd(perturbIndBoth(PMInd)) = 1;
-MinusInd(perturbIndBoth(~PMInd)) = 1;
-
-PlusInd = logical(PlusInd);
-MinusInd = logical(MinusInd);
+save([SaveFolder sprintf('Paper2GlobConv_BlockID%d.mat',BlockID)],...
+    'LDEPertOutAll','L2Diff_EIWgtsAll','DiffVecAll')
 end
