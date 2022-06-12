@@ -17,7 +17,7 @@ b = 1 - 2*a*x0;
 c = x0 - a*x0^2 - b*x0;
 
 f = @(x) a*x.^2 + b*x + c;
-hardbound = 120; % back again to linear
+hardbound = 150; % back again to linear
 d = f(hardbound);
 f1 = @(x) x-(hardbound-d);
 

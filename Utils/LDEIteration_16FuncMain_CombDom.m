@@ -3,7 +3,7 @@
 % functions, and we choose the best from them for every step
 %% Starting from the finest function!
 % Output: Iteration firing maps, and L1 diff norm
-function [LDEEpoOut,LDEIL2Diff,L2DiffNormNeib,L2Diameter,LDEequv,FuncUse] = ...
+function [LDERepFinal,LDEIL2Diff,L2DiffNormNeib,L2Diameter,LDEequv,FuncUseAll] = ...
     LDEIteration_16FuncMain_CombDom(...
     PixInptCtgrUse,LDEIni,p,Epoc,...
     C_SS_mean,C_CS_mean,C_IS_mean,...
@@ -19,6 +19,18 @@ else
     N_HCOut = 4; NPixX = 10; NPixY = 10;
 end
 
+if length(varargin)>3
+    InhKillFlag = varargin{4};
+else
+    InhKillFlag = true;
+end
+
+if length(varargin)>4
+   Outflag = varargin{5};
+else
+   Outflag = 'xn';
+end
+
 LDEItr = cell(Epoc+1,1);LDEItr{1} = LDEIni;
 LDEEpoOut = cell(Epoc+1,1); LDEEpoOut{1} = LDEIni;
 LDEoutVec = zeros(size(LDEIni.I,1)*3,Epoc+1);
@@ -27,17 +39,19 @@ LDEoutVec(:,1) = [LDEIni.S;LDEIni.C;LDEIni.I];
 % record the function quoted every step
 FuncUseAll = zeros(Epoc,1);
 
-InhKillFlag = true; Thrsld = 70; Highist = [100,97]; % pars for inhibition suppresion
+%InhKillFlag = true; Thrsld = 70; Highist = [100,97]; % pars for inhibition suppresion
 NANGlobalFlag = false;
 for Epc = 1:Epoc
     if NANGlobalFlag
         continue
     end
     
-    % First do convolution
-    LDEUse = LDEItr{Epc};
+    LDEInpt = LDEItr{Epc};
+    LDEUse = LDEInpt;
     if InhKillFlag % apply inhibition suppresion
+        Thrsld = 70; Highist = [100,95];
         LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist);
+        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
     end
     L4EUse = C_SS_mean*LDEUse.S + ...%- diag(C_SS_mean).*LDEUse.S + ...
         C_CS_mean*LDEUse.S + ...%- diag(C_CS_mean).*LDEUse.S + ...
@@ -95,9 +109,9 @@ for Epc = 1:Epoc
     FuncUseAll(Epc) = FuncUse;
     
     LDENext = struct(...
-        'S',LDEOut.S*p + LDEUse.S*(1-p),...
-        'C',LDEOut.C*p + LDEUse.C*(1-p),...
-        'I',LDEOut.I*p + LDEUse.I*(1-p));
+        'S',LDEOut.S*p + LDEInpt.S*(1-p),...
+        'C',LDEOut.C*p + LDEInpt.C*(1-p),...
+        'I',LDEOut.I*p + LDEInpt.I*(1-p));
     LDEItr{Epc+1} = LDENext; LDEEpoOut{Epc+1} = LDEOut;
     LDEoutVec(:,Epc+1) = [LDEOut.S; LDEOut.C; LDEOut.I];
 
@@ -105,6 +119,17 @@ for Epc = 1:Epoc
         fprintf('***Warning! NAN results in the %d epoch. Returning...\n',Epc)
         NANGlobalFlag = true;
     end
+end
+
+if strcmpi(Outflag,'f(xn)')
+   disp('Showing f(xn)')
+   LDERepFinal = LDEoutVec;
+elseif strcmpi(Outflag,'xn')
+   disp('Showing xn')
+   LDERepFinal = LDEItr;
+else
+   disp('Unknown export flag, using xn')
+   LDERepFinal = LDEItr;
 end
 
 %L2DiffNorm = zeros(Epoc,1);

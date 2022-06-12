@@ -103,7 +103,7 @@ LDEPertOutAll = cell(NSample,1);
 EpocTest = 200;
 L2Diff_EIWgtsAll = zeros(NSample,EpocTest+1);
 DiffVecAll = zeros(NSample,EpocTest+1,NPixY*NPixX*3);
-p = 0.5;
+p = 0.33;
 
 tic
 for TestInd = 1:NSample
@@ -147,8 +147,8 @@ for TestInd = 1:NSample
     fprintf("sample %d is done.\n",TestInd)
 end
 toc
-save([SaveFolder sprintf('Paper2GlobConv_IC%d_Ctrst%d.mat',...
-    AngId,ContrastID)], 'LDEPertOutAll','L2Diff_EIWgtsAll','DiffVecAll')
+save([SaveFolder sprintf('Paper2GlobConv_IC%d_Ctrst%d_p%.2f.mat',...
+    AngId,ContrastID,p)], 'LDEPertOutAll','L2Diff_EIWgtsAll','DiffVecAll')
 end
 
 % generate random binary matrix
