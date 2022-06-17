@@ -49,9 +49,15 @@ for Epc = 1:Epoc
     LDEInpt = LDEItr{Epc};
     LDEUse = LDEInpt;
     if InhKillFlag % apply inhibition suppresion
-        Thrsld = 70; Highist = [100,95];
-        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist);
-        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
+        LDEUse.E = LDEUse.S * (1-0.3077) + LDEUse.C * 0.3077;
+        Thrsld = 50; Highist = [200,150]; HardBoundE = 200; SlopeE = 0;
+        LDEUseEAdj = InhKill(LDEUse.E, Thrsld, Highist, HardBoundE, SlopeE)./LDEUse.E;
+        LDEUse.S = LDEUse.S .* LDEUseEAdj;
+        LDEUse.C = LDEUse.C .* LDEUseEAdj;
+        
+        Thrsld = 70; Highist = [100,95]; HardBoundI = 120; SlopeI = 0.95;
+        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist, HardBoundI, SlopeI);
+        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist, HardBoundI, SlopeI);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
     end
     L4EUse = C_SS_mean*LDEUse.S + ...%- diag(C_SS_mean).*LDEUse.S + ...
         C_CS_mean*LDEUse.S + ...%- diag(C_CS_mean).*LDEUse.S + ...
