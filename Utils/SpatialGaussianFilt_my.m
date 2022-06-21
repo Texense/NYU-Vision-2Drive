@@ -22,7 +22,11 @@ end
 c = Kersize/2;
 exponent = ((x-c).^2+(y-c).^2)/(2*FiltSig^2);
 TruncGausKer = exp(-exponent);
-TruncGausKer(TruncGausKer<exp(-(Trunc*1.1)^2/2))=0; % truncate
+TruncGausKer(TruncGausKer<exp(-(Trunc*1.0)^2/2))=0; % truncate
+TruncGausKer = TruncGausKer + ...
+               TruncGausKer(end:-1:1,:) + ...
+               TruncGausKer(:,end:-1:1) + ...
+               TruncGausKer(end:-1:1,end:-1:1);%symmetrize
 TruncGausKer = TruncGausKer/sum(TruncGausKer,'all'); % normalize
 %% Extend OD_SMap for one HC each side. Assume that the Gaussian Ker is not too large
 % first extract a 2-by-2 pattern from northeast
@@ -48,10 +52,10 @@ if FigOn
     figure
     for CtgrInd = 1:length(CtgrList)
         subplot(1,length(CtgrList),CtgrInd)
-        imagesc(reshape(SpatInputFilt(:,CtgrInd),a,b))
-        set(gca,'YDir','Normal')
-        colorbar
-        axis square
+        ShowField(SpatInputFilt(:,CtgrInd), 1:a*b,a,b,'',[],n_S_HC)
+%         set(gca,'YDir','Normal')
+%         colorbar
+%         axis square
     end
 end
 

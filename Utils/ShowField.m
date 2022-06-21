@@ -39,7 +39,7 @@ end
 if nargin > 4
     title(varargin{1})
 end
-if nargin > 5
+if nargin > 5 && ~isempty(varargin{2})
     caxis(varargin{2})
 end
 axis square

@@ -31,6 +31,15 @@ else
    Outflag = 'xn';
 end
 
+if length(varargin)>5
+    EKp = varargin{6}; % excitation suppresion parameters
+    IKp = varargin{7};
+else
+    EKp.Thrsld = 50; EKp.Highist = [200,150]; EKp.HardBound = 200; EKp.Slope = 0;
+    
+    IKp.Thrsld = 70; IKp.Highist = [100,95];  IKp.HardBound = 120; IKp.Slope = 0.95;
+end
+
 LDEItr = cell(Epoc+1,1);LDEItr{1} = LDEIni;
 LDEEpoOut = cell(Epoc+1,1); LDEEpoOut{1} = LDEIni;
 LDEoutVec = zeros(size(LDEIni.I,1)*3,Epoc+1);
@@ -50,14 +59,14 @@ for Epc = 1:Epoc
     LDEUse = LDEInpt;
     if InhKillFlag % apply inhibition suppresion
         LDEUse.E = LDEUse.S * (1-0.3077) + LDEUse.C * 0.3077;
-        Thrsld = 50; Highist = [200,150]; HardBoundE = 200; SlopeE = 0;
-        LDEUseEAdj = InhKill(LDEUse.E, Thrsld, Highist, HardBoundE, SlopeE)./LDEUse.E;
+        %ThrsldE = 50; HighistE = [200,150]; HardBoundE = 200; SlopeE = 0;
+        LDEUseEAdj = InhKill(LDEUse.E, EKp.Thrsld, EKp.Highist, EKp.HardBound, EKp.Slope)./LDEUse.E;
         LDEUse.S = LDEUse.S .* LDEUseEAdj;
         LDEUse.C = LDEUse.C .* LDEUseEAdj;
         
-        Thrsld = 70; Highist = [100,95]; HardBoundI = 120; SlopeI = 0.95;
-        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist, HardBoundI, SlopeI);
-        LDEUse.I = InhKill(LDEUse.I, Thrsld, Highist, HardBoundI, SlopeI);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
+        %ThrsldI = 70; HighistI = [100,95];  HardBoundI = 120; SlopeI = 0.95;
+        LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);
+        LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
     end
     L4EUse = C_SS_mean*LDEUse.S + ...%- diag(C_SS_mean).*LDEUse.S + ...
         C_CS_mean*LDEUse.S + ...%- diag(C_CS_mean).*LDEUse.S + ...
