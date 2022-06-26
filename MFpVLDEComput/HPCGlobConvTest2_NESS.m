@@ -70,15 +70,15 @@ ICWeights = 1/2:1/2:3/2;
 fields = fieldnames(LDEICPart);
 for FInd = 1:length(fields)
     LDEIC_temp.(fields{FInd}) = ...
-        ICWeights(ContrastID) * LDEICPart.(fields{FInd});          
+        ICWeights(ContrastID) * LDEICPart.(fields{FInd});
 end
 
 % Now perturbe and collect a group
 PertBckSz = 2; % size of the block
 BlockN = floor(NPixX/PertBckSz);
-  % Use Kronecker Tensor Product
+% Use Kronecker Tensor Product
 ICTestAll = cell(NSample,1);
-for SampInd = 1:NSample    
+for SampInd = 1:NSample
     LDEIC_pert = LDEIC_temp;
     Block = ones(PertBckSz);
     PertMtx = ones(BlockN);
@@ -91,12 +91,36 @@ for SampInd = 1:NSample
     PertMtx(MinusInd) = Pertminus(MinusInd);
     PertMtxUse = kron(PertMtx,Block);
     % take a blockwise peerturbation
-
+    
     LDEIC_pert.S = symmHCs(LDEIC_pert.S,N_HCOut,NPixX,NPixY,PertMtxUse,'prod');
     LDEIC_pert.C = symmHCs(LDEIC_pert.C,N_HCOut,NPixX,NPixY,PertMtxUse,'prod');
     ICTestAll{SampInd} = LDEIC_pert;
     
 end
+
+%% Redefine L6 and LGN inpt category
+FigOn = false;
+L6smear = n_S_HC*0.34; LGNsmear = n_S_HC*0.2;
+TruncL6 = 1.25; TruncLGN = 1;
+L6SFilt_Grating = SpatialGaussianFilt_my(OD_SMap,...
+    N_HC,n_S_HC,L6smear,TruncL6,FigOn);
+LGNFilt_Grating = SpatialGaussianFilt_my(OD_SMap,...
+    N_HC,n_S_HC,LGNsmear,TruncLGN,FigOn);
+
+PixL6Ctgr = LGNIndSpat(L6SFilt_Grating,1:4,NnSPixel,N_HC,N_HCOut,NPixX,NPixY);
+PixLGNCtgr = LGNIndSpat(LGNFilt_Grating,1:4,NnSPixel,N_HC,N_HCOut,NPixX,NPixY);
+% However, the Ctgr for pixels needs to be rotated/flipped to represent the actual gratings
+MirInd = logical(MirInd);
+for Ctgr = 1:4
+    PixL6Ctgr(:,Ctgr) = HCRot(PixL6Ctgr(:,Ctgr),RotInd,N_HCOut,NPixX,NPixY,MirInd);
+    PixLGNCtgr(:,Ctgr) = HCRot(PixLGNCtgr(:,Ctgr),RotInd,N_HCOut,NPixX,NPixY,MirInd);
+end
+
+PixInptCtgrUse  = zeros(PixNumOut,LGNlist,L6list);
+for PixInd = 1:PixNumOut
+    PixInptCtgrUse(PixInd,:,:) = PixLGNCtgr(PixInd,:)' *PixL6Ctgr(PixInd,:);% by multiplying both indexes
+end
+
 
 %% Simulate for each IC
 LDEPertOutAll = cell(NSample,1);
@@ -112,7 +136,7 @@ for TestInd = 1:NSample
     IniTest.C = symmHCs(ICUse.C,N_HCOut,NPixX,NPixY);
     IniTest.I = symmHCs(ICUse.I,N_HCOut,NPixX,NPixY);
     
-    % Function: small large combined   
+    % Function: small large combined
     [LDEPertOutAll{TestInd},~,~,~,~] = ...
         LDEIteration_16FuncMain_CombDom(...
         PixInptCtgrUse,IniTest,p,EpocTest,...
@@ -120,8 +144,8 @@ for TestInd = 1:NSample
         C_SC_mean,C_CC_mean,C_IC_mean,...
         C_SI_mean,C_CI_mean,C_II_mean,...
         L4EmeshXAll,L4ImeshYAll,LDEFrfuncAll,...
-        N_HCOut,NPixX,NPixY)  ;
-    LDEequv = LDEPertOutAll{TestInd}{end}; 
+        N_HCOut,NPixX,NPixY,false,'xn')  ;
+    LDEequv = LDEPertOutAll{TestInd}{end};
     
     if ~isempty(LDEequv)
         for EpcInd = 1:EpocTest+1
@@ -147,7 +171,7 @@ for TestInd = 1:NSample
     fprintf("sample %d is done.\n",TestInd)
 end
 toc
-save([SaveFolder sprintf('Paper2GlobConv_IC%d_Ctrst%d_p%.2f.mat',...
+save([SaveFolder sprintf('Paper2GlobConv_IC%d_Ctrst%d_p%.2f_NewSmear.mat',...
     AngId,ContrastID,p)], 'LDEPertOutAll','L2Diff_EIWgtsAll','DiffVecAll')
 end
 

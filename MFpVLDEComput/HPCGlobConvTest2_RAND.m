@@ -77,6 +77,30 @@ for SampInd = 1:NSample
     
 end
 
+%% Redefine L6 and LGN inpt category
+FigOn = false;
+L6smear = n_S_HC*0.34; LGNsmear = n_S_HC*0.2;
+TruncL6 = 1.25; TruncLGN = 1;
+L6SFilt_Grating = SpatialGaussianFilt_my(OD_SMap,...
+    N_HC,n_S_HC,L6smear,TruncL6,FigOn);
+LGNFilt_Grating = SpatialGaussianFilt_my(OD_SMap,...
+    N_HC,n_S_HC,LGNsmear,TruncLGN,FigOn);
+
+PixL6Ctgr = LGNIndSpat(L6SFilt_Grating,1:4,NnSPixel,N_HC,N_HCOut,NPixX,NPixY);
+PixLGNCtgr = LGNIndSpat(LGNFilt_Grating,1:4,NnSPixel,N_HC,N_HCOut,NPixX,NPixY);
+% However, the Ctgr for pixels needs to be rotated/flipped to represent the actual gratings
+% MirInd = logical(MirInd);
+% for Ctgr = 1:4
+%     PixL6Ctgr(:,Ctgr) = HCRot(PixL6Ctgr(:,Ctgr),RotInd,N_HCOut,NPixX,NPixY,MirInd);
+%     PixLGNCtgr(:,Ctgr) = HCRot(PixLGNCtgr(:,Ctgr),RotInd,N_HCOut,NPixX,NPixY,MirInd);
+% end
+
+PixInptCtgrUse  = zeros(PixNumOut,LGNlist,L6list);
+for PixInd = 1:PixNumOut
+    PixInptCtgrUse(PixInd,:,:) = PixLGNCtgr(PixInd,:)' *PixL6Ctgr(PixInd,:);% by multiplying both indexes
+end
+
+
 %% Simulate for each IC
 LDEPertOutAll = cell(NSample,1);
 EpocTest = 200;
@@ -99,7 +123,7 @@ for TestInd = 1:NSample
         C_SC_mean,C_CC_mean,C_IC_mean,...
         C_SI_mean,C_CI_mean,C_II_mean,...
         L4EmeshXAll,L4ImeshYAll,LDEFrfuncAll,...
-        N_HCOut,NPixX,NPixY)  ;
+        N_HCOut,NPixX,NPixY,false,'xn')  ;
     LDEequv = LDEPertOutAll{TestInd}{end}; 
     
     if ~isempty(LDEequv)
@@ -126,6 +150,6 @@ for TestInd = 1:NSample
     fprintf("sample %d is done.\n",TestInd)
 end
 toc
-save([SaveFolder sprintf('Paper2GlobConv_BlockID%d_p%.2f.mat',BlockID,p)],...
+save([SaveFolder sprintf('Paper2GlobConv_BlockID%d_p%.2f_NewSmear.mat',BlockID,p)],...
     'LDEPertOutAll','L2Diff_EIWgtsAll','DiffVecAll')
 end
