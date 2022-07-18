@@ -2,7 +2,15 @@
 % input: XData, YData, CData: 1*n vecter
 %        bounds: [lower bound, upper bound] ; can be flexible for 10%
 %        colorcode: [good;ok;bad] what color to indicate
-function [CIndi] = PlotAccu(XData, YData, CData, bounds, colorcode,TitText)
+%        varargin: xlabels; ylabels
+function [CIndi] = PlotAccu(XData, YData, CData, bounds, colorcode,TitText,varargin)
+if ~isempty(varargin)
+    xlabels = varargin{1};
+    ylabels = varargin{2};
+else 
+    xlabels = 'S^{IE}/S^{II}';
+    ylabels = 'S^{EI}/S^{EE}';
+end
 FlexPor = 0.15;
 
 Good = CData>=bounds(1)             & CData<=bounds(2);
@@ -19,7 +27,7 @@ hold on
 scatter(XData, YData, [], CIndi,'.')
 colormap(ax1,colorcode)
 caxis([0,2])
-xlabel('S^{IE}/S^{II}');ylabel('S^{EI}/S^{EE}')
+xlabel(xlabels);ylabel(ylabels)
 axis square
 title(TitText)
 axis([min(XData) max(XData) min(YData) max(YData)])
