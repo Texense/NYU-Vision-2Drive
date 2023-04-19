@@ -16,7 +16,7 @@ CurrentFolder = pwd
 addpath(CurrentFolder)
 addpath([CurrentFolder '/Utils'])
 addpath([CurrentFolder '/Data'])
-SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/LARGE16/'];
+SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/25Function_Binocular/'];
 addpath(SaveFolder)
 DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
