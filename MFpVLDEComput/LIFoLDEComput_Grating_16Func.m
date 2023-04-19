@@ -3,6 +3,8 @@
 %              'f_EnIOut','meanVs','SteadyIndicate','FailureIndicate','L4ERcrd','L4IRcrd')   
 % Input:  Angle:ranging from 0-90 deg, although we only use 0 7.5 15 22.5
 %         LGNctgr, L6ctgr: ranging from 1-4
+%% NOTE: Now we are computing for binocular, and has to mix BG and drive inputs
+%         LGNctgr, L6ctgr: ranging from 1-5!! 5 means background!
 %         LGNL6Mapctgr: 1 for linear, 2 for cosine
 %         FlagLargeDom: 1 for small domain, 2 for large domain
 % Version 1: L6 range switched to [10 60] Hz per L6 neuron
@@ -73,12 +75,7 @@ clear S
 %% Prepare for a canonical pixel
 Angles_4Input = Angle + [0 45 90 135];
 lgn_SOnOff = [45+abs(mod(Angles_4Input,180)-90)/2;
-              45-abs(mod(Angles_4Input,180)-90)/2]/1e3;      
-%%%%%%%%% These are unused in LIF-only function... %%%%%%%          
-lgn_COnOff = [0.045;
-              0.045];
-lgn_I =       0.045; 
-%%%%%%%%% These are unused in LIF-only function... %%%%%%%  
+              45-abs(mod(Angles_4Input,180)-90)/2]/1e3;              
 % redefine low-up bounds for L6: [10 54]
 NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
 L6up = 60; L6low = 6; %[10 54; 12 50]
@@ -101,12 +98,19 @@ elseif LGNL6Mapctgr == 3
 else
    disp("illigal LGN->L6 mapping.")
 %rL6E = [1.0; 1.75; 2.5]; rL6I = 3*rL6E;
-end                            
+end    
+%% NOTE: Now we are computing for binocular, and has to mix BG and drive 
+FL6_Angle1 = [FL6_Angle1, 0.007]; % background L6 frs
+lgn_SOnOff = [lgn_SOnOff, [0.02;0.02]];
+lgn_COnOff = [0.045*ones(2,4),[0.02;0.02]];
+lgn_IOnOff = [0.045*ones(1,4),0.02]; 
+
 rL6SU = NL6S*FL6_Angle1(L6ctgr); %rL6EU = rL6E(InputCtgr); 
 rL6CU = NL6C*FL6_Angle1(L6ctgr);
 rL6IU = NL6I*FL6_Angle1(L6ctgr);
 lgn_SU = lgn_SOnOff(:,LGNctgr);
-
+lgn_C = lgn_COnOff(:,LGNctgr);
+lgn_I = lgn_IOnOff(LGNctgr);
 % Determine L4 Input from a range
 L4SE = zeros(N_HC*NPixX*N_HC*NPixY,1);
 L4SI = zeros(N_HC*NPixX*N_HC*NPixY,1);
@@ -181,7 +185,7 @@ parfor  LDEInd = 1:a0
                      LGNFreq, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
                      S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
-                     lgn_SU, lgn_COnOff,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
+                     lgn_SU, lgn_C,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
                      gL_E,gL_I,Ve,Vi, tau_ref,... %5
 ...% Below are LIF details
                      tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
