@@ -12,10 +12,21 @@
 %                     type, sum of rows=1
 %         LGNon: 1*lgn vecter, entries are lgn values of each type. from
 %                 small to large
+%         varargin: true or false;
 
 % A important variant: If InptS_drive is already ctgr type, then no need to
 % assign anymore
-function [PixLGNCtgr] = LGNIndSpat_Rec(InptS_drive, temp, NnSPixel,N_HC,N_HCoutX,N_HCoutY,NPixX,NPixY)
+
+%% ocular dominance modulation
+function [PixLGNCtgr] = LGNIndSpat_Rec(...
+    InptS_drive, temp, NnSPixel,N_HC,N_HCoutX,N_HCoutY,NPixX,NPixY,...
+    varargin)
+if length(varargin)>0
+   OcuFlag = varargin{1};
+else
+    OcuFlag = false;
+end
+
 PixNum = NPixX*N_HC * NPixY*N_HC;
 %% get LGN type of each cell
 if size(InptS_drive,2) == 1
@@ -79,8 +90,22 @@ PixIndX = mod(1:N_HCoutX*NPixX,2*NPixX); PixIndX(PixIndX==0) = 2*NPixX;
 PixIndY = mod(1:N_HCoutY*NPixY,2*NPixY); PixIndY(PixIndY==0) = 2*NPixY;
 Ind_SOn_MapOut = Ind_SOn_Map2by2(PixIndY,PixIndX,:);
 
+%% reshape the 3D matrix to 2D
 PixLGNCtgr = zeros(NPixY*N_HCoutY*NPixX*N_HCoutX,length(temp));
 for lgnTy = 1:length(temp)
     PixLGNCtgr(:,lgnTy) = reshape(Ind_SOn_MapOut(:,:,lgnTy),NPixY*N_HCoutY*NPixX*N_HCoutX,1);
 end
+
+%% monocular modulation for LGN -- No averaging scheme cross the ocular dominance
+if OcuFlag
+   %: Note: in this case, it's either presyn LGN from one ODC or another.
+   %We can just choose to eliminate the side with smaller weights, and
+   %renormalize the other side.
+   OcuSign = PixLGNCtgr(:,end)>1/2;
+   PixLGNCtgr(OcuSign,end) = 1; PixLGNCtgr(OcuSign,1:end-1) = 0;
+   PixLGNCtgr(~OcuSign,1:end-1) = ...
+       PixLGNCtgr(~OcuSign,1:end-1)./repmat((1-PixLGNCtgr(~OcuSign,end)),1,length(temp)-1);
+   PixLGNCtgr(~OcuSign,end) = 0; 
+end
+
 end
