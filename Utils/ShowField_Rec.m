@@ -45,6 +45,15 @@ if nargin > 5 && ~isempty(varargin{2})
     caxis(varargin{2})
 end
 %axis square
-pbaspect([1 2 1]);
-axis tight
+if nargin > 7
+    HCXShow = varargin{4};
+    HCYShow = varargin{5};
+    axis([0 HCXShow*PixNum 0 HCYShow*PixNum])
+    axis square
+    axis tight
+else
+    pbaspect([1 2 1]);
+    axis tight
+end
+
 end

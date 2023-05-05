@@ -5,10 +5,10 @@
 %
 % The used HC can be rotated or flipped to implement ICs based on NESSs of 
 % different angles.
-% New version: can tolerate nonsquare patch in output now
 % varargin: 
 %           Mirind: true for flip, false for not flip
 % LDEequv can contains SCI (3 fields of maps) or just one field of map
+%% New version: can tolerate nonsquare patch in output now
 function [LDEequvUse] = HCRotXY(LDEequv,rotID,N_HCinX,N_HCinY,N_HCOutX,N_HCOutY,NPixX,NPixY, varargin)
 if ~isempty(varargin)
     Mirind = varargin{1};

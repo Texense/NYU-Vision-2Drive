@@ -12,9 +12,24 @@
 %% NOTE: I should implement the ocular modulation of sptial kernels in this function
 % Hence it should be further modified. Now I am just adapting for 4*8 HC
 % outputs...
+% Parax, Paray stands for the two parameters for ocular modulation:
+%       Parax: how much is killed for cross ocular column connections. 
+%               0: all killed; 1: all preserved
+%       Paray: how much of the killed connections is returned to the mirror 
+%       pixel in the same ocular column
+%               0: no returned; 1: all returned
 
-function C_SS_mean = AveSpatKer_Rec(C_PQ_Pixel_Us,N_HCin,N_HCoutX,N_HCoutY,NPixX,NPixY)
+function C_PQ_mean = AveSpatKer_Rec(...
+    C_PQ_Pixel_Us,N_HCin,N_HCoutX,N_HCoutY,NPixX,NPixY, ...
+    varargin)
 %% Check if C_SS is an eligible matrix
+if isempty(varargin)
+    Parax = 1; Paray = 0;
+else
+    Parax = varargin{1}; 
+    Paray = varargin{2};
+end
+
 if size(C_PQ_Pixel_Us,1) ~= size(C_PQ_Pixel_Us,2)
     error('Input Matrix not square!')
 end
@@ -96,7 +111,7 @@ Ker_PQ_meanDia(2:end,2:end,4) = Ker_PQ_mean(2:end,2:end);
 Ker_PQ_mean = mean(Ker_PQ_meanDia,3);
 
 %% Put Kernel back to Matrix
-C_SS_mean  = zeros(N_HCoutX*NPixX*N_HCoutY*NPixY);
+C_PQ_mean  = zeros(N_HCoutX*NPixX*N_HCoutY*NPixY);
 
 for PixInd = 1:N_HCoutX*NPixX*N_HCoutY*NPixY
     PX = ceil(PixInd/(N_HCoutY*NPixY));
@@ -105,8 +120,10 @@ for PixInd = 1:N_HCoutX*NPixX*N_HCoutY*NPixY
         PY = N_HCoutY*NPixY;
     end
     
-    %% Below for odd N_HC is also problematic -- leave for now as well
-    if mod(N_HCoutX,2) == 1
+    %% Below for odd N_HC is also problematic -- leave for now as well.
+    % If I really want to implement for odd HCs, boundary conditions &
+    % different # rows/cols will be problems
+    if mod(N_HCoutY,2) == 1
         N_HCout = N_HCoutX; %% REDUANDENT! This is only for not making errors...
         % If odd: Note, this will only work for 4n-1. 4n+1 will introduce error on
         % bdry
@@ -136,19 +153,37 @@ for PixInd = 1:N_HCoutX*NPixX*N_HCoutY*NPixY
             + ConnMap_Rev(                  1:            NPixY, (N_HCout+1)*NPixX+1:(N_HCout+2)*NPixX) ...
             + ConnMap_Rev((N_HCout+1)*NPixY+1:(N_HCout+2)*NPixY, (N_HCout+1)*NPixX+1:(N_HCout+2)*NPixX);
         ConnMapPix = ConnMap_Rev(NPixY+1:(N_HCout+1)*NPixY, NPixX+1:(N_HCout+1)*NPixX);   
-    %% We are actually only using the even case    
-    else % If even: Periodic boundary conditions
+    % We are actually only using the even case  % If even: Periodic boundary conditions  
+    else 
         ConnMap_Rev = zeros(N_HCoutY*NPixY,N_HCoutX*NPixX);
-        % If I want to implement ocular modulation to connectivity, here it
-        % should be -- just not now.
+        % Periodic boundarys for projections
         YRange = mod(PY-NPixY:PY+NPixY-1,N_HCoutY*NPixY); YRange(YRange==0) = N_HCoutY*NPixY;
         XRange = mod(PX-NPixX:PX+NPixX-1,N_HCoutX*NPixX); XRange(XRange==0) = N_HCoutX*NPixX;
         ConnMap_Rev(YRange,XRange) = Ker_PQ_mean;
         
-        ConnMapPix = ConnMap_Rev;
-        
+        %% Now I want to implement ocular modulation to connectivity.
+        OcuIndi = ones(size(ConnMap_Rev)); % ocular column indicator
+        OcuIndi(mod(ceil((1:N_HCoutY*NPixY)/NPixY),2)==1,:) = 0;
+        % first, determine the ocular column of center of the kernel
+        CenterOcuFlag = OcuIndi(PY,PX);
+        % Then determine the same-ocu and diff-ocu connections
+        ConnMap_SameOcu = ConnMap_Rev; ConnMap_DiffOcu = ConnMap_Rev; ConnMap_MirrOcu = zeros(size(ConnMap_Rev));
+        ConnMap_SameOcu(OcuIndi~=CenterOcuFlag) = 0;
+        ConnMap_DiffOcu(OcuIndi==CenterOcuFlag) = 0;
+        % Then kill the diff-ocu connections using Parax
+        ConnMap_DiffOcuU = ConnMap_DiffOcu*Parax;
+        % Then, map the killed part to the same-ocu            
+        [DiffRowInd,~] = find(ConnMap_DiffOcu); % First, which row is the DiffKernel?
+        DiffRow_HC = mode(ceil(DiffRowInd/NPixY)); %% NOTE!!: 
+        % here I use the most frequent row -- but this will FAIL if the kernel is too large and covers multiple rows...
+        Mirror_HC = ceil(PY/NPixY);             % Then, which row does the center lie in?
+        ConnMap_MirrOcu(Mirror_HC*NPixY:-1:(Mirror_HC-1)*NPixY+1,:) = ...
+            ConnMap_DiffOcu((DiffRow_HC-1)*NPixY+1:DiffRow_HC*NPixY,:); % map to the mirror
+        ConnMap_MirrOcuU = Paray*(1-Parax)*ConnMap_MirrOcu;
+        % lastly, put up everthing together
+        ConnMapPix = ConnMap_SameOcu + ConnMap_DiffOcuU + ConnMap_MirrOcuU;      
     end
     % Put back to Build a mat with the averaged kernal 
-    C_SS_mean(PixInd,:) = reshape(ConnMapPix,N_HCoutX*NPixX*N_HCoutY*NPixY,1)';
+    C_PQ_mean(PixInd,:) = reshape(ConnMapPix,N_HCoutX*NPixX*N_HCoutY*NPixY,1)';
 end
 end
