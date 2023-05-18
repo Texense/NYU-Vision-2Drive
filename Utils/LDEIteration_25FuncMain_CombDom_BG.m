@@ -50,6 +50,7 @@ LDEItr = cell(Epoc+1,1);LDEItr{1} = LDEIni;
 LDEEpoOut = cell(Epoc+1,1); LDEEpoOut{1} = LDEIni;
 LDEoutVec = zeros(size(LDEIni.I,1)*3,Epoc+1);
 LDEoutVec(:,1) = [LDEIni.S;LDEIni.C;LDEIni.I];
+BGFlagall = false(3, Epoc+1);
 
 % record the function quoted every step
 FuncUseAll = zeros(Epoc,1);
@@ -141,6 +142,7 @@ for Epc = 1:Epoc
         'I',LDEOut.I*p + LDEInpt.I*(1-p));
     LDEItr{Epc+1} = LDENext; LDEEpoOut{Epc+1} = LDEOut;
     LDEoutVec(:,Epc+1) = [LDEOut.S; LDEOut.C; LDEOut.I];
+    %BGFlagall(:,Epc+1) = [BGflagS;  BGflagC;  BGflagI];
 
     if FuncUse>FuncN && nanFlag % return if used up all functions but still getting nans
         fprintf('***Warning! NAN results in the %d epoch. Returning...\n',Epc)

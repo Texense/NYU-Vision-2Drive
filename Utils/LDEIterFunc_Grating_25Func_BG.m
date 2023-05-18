@@ -12,7 +12,7 @@
 % Zhuo-Cheng Xiao 04/23/2023
 % Find a way to incorporate BG local response functions:
 
-function [LDEOutS,LibyAll] = LDEIterFunc_Grating_25Func_BG(...
+function LDEOutS = LDEIterFunc_Grating_25Func_BG(...
     L4EmeshX, L4ImeshY,...
     LDEFrfunc_Subf,...
     L4EmeshXBG, L4ImeshYBG,...
@@ -29,12 +29,17 @@ function [LDEOutS,LibyAll] = LDEIterFunc_Grating_25Func_BG(...
         LibyAll(:,LGNInd,L6Ind) = LDEOutLIBy{LGNInd,L6Ind};
         end
     end
-    %% compute another output using the BG function -- if any nan, then don't use
+    %% compute another output using the BG function:
+    % There is always going to be NAN values. Just use the good entries!
     LDEOutBG = interp2(L4EmeshXBG, L4ImeshYBG,...
         LDEFrfunc_SubfBG, L4EUse,L4IUse);%,'makima'
-    if ~any(isnan(LDEOutBG),'all')
-        LibyAll(:,end,end) = LDEOutBG;
-    end
+%     if ~any(isnan(LDEOutBG),'all')
+%         LibyAll(:,end,end) = LDEOutBG;
+%         BGflag = true;
+%     else
+%         BGflag = false;
+%     end
+    LibyAll(~isnan(LDEOutBG),end,end) = LDEOutBG(~isnan(LDEOutBG));
     % Then compose
     LDEOutS = sum(PixInptCtgrUse.*LibyAll,[2,3]);
 
