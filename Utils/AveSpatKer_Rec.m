@@ -115,7 +115,7 @@ C_PQ_mean  = zeros(N_HCoutX*NPixX*N_HCoutY*NPixY);
 
 for PixInd = 1:N_HCoutX*NPixX*N_HCoutY*NPixY
     PX = ceil(PixInd/(N_HCoutY*NPixY));
-    PY = mod(PixInd,N_HCoutX*NPixY);
+    PY = mod(PixInd,N_HCoutY*NPixY);
     if PY == 0
         PY = N_HCoutY*NPixY;
     end
@@ -162,6 +162,8 @@ for PixInd = 1:N_HCoutX*NPixX*N_HCoutY*NPixY
         ConnMap_Rev(YRange,XRange) = Ker_PQ_mean;
         
         %% Now I want to implement ocular modulation to connectivity.
+        % The big problema in the last round: I forgot that some kernals
+        % could extend to as many as 3 rows! Need to mirror back both ends!
         OcuIndi = ones(size(ConnMap_Rev)); % ocular column indicator
         OcuIndi(mod(ceil((1:N_HCoutY*NPixY)/NPixY),2)==1,:) = 0;
         % first, determine the ocular column of center of the kernel
@@ -173,12 +175,16 @@ for PixInd = 1:N_HCoutX*NPixX*N_HCoutY*NPixY
         % Then kill the diff-ocu connections using Parax
         ConnMap_DiffOcuU = ConnMap_DiffOcu*Parax;
         % Then, map the killed part to the same-ocu            
-        [DiffRowInd,~] = find(ConnMap_DiffOcu); % First, which row is the DiffKernel?
-        DiffRow_HC = mode(ceil(DiffRowInd/NPixY)); %% NOTE!!: 
-        % here I use the most frequent row -- but this will FAIL if the kernel is too large and covers multiple rows...
+            % Dscarded code: [DiffRowInd,~] = find(ConnMap_DiffOcu); % First, which row is the DiffKernel?
+            %               DiffRow_HC = mode(ceil(DiffRowInd/NPixY)); %% NOTE!!: 
+            % here I use the most frequent row -- but this will FAIL if the kernel is too large and covers multiple rows...
+        %% Basic assumption: any L4 kernel does not extend more than 3 rows!
         Mirror_HC = ceil(PY/NPixY);             % Then, which row does the center lie in?
+        DiffRow_HC = mod([Mirror_HC+1,Mirror_HC-1],N_HCoutY);
+        DiffRow_HC(DiffRow_HC == 0) = N_HCoutY;
         ConnMap_MirrOcu(Mirror_HC*NPixY:-1:(Mirror_HC-1)*NPixY+1,:) = ...
-            ConnMap_DiffOcu((DiffRow_HC-1)*NPixY+1:DiffRow_HC*NPixY,:); % map to the mirror
+            ConnMap_DiffOcu((DiffRow_HC(1)-1)*NPixY+1:DiffRow_HC(1)*NPixY,:) + ...
+            ConnMap_DiffOcu((DiffRow_HC(2)-1)*NPixY+1:DiffRow_HC(2)*NPixY,:); % map to the mirror
         ConnMap_MirrOcuU = Paray*(1-Parax)*ConnMap_MirrOcu;
         % lastly, put up everthing together
         ConnMapPix = ConnMap_SameOcu + ConnMap_DiffOcuU + ConnMap_MirrOcuU;      

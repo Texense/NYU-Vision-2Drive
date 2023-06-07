@@ -48,12 +48,13 @@ end
 if nargin > 7
     HCXShow = varargin{4};
     HCYShow = varargin{5};
-    axis([0 HCXShow*PixNum 0 HCYShow*PixNum])
+    axis([1/2 HCXShow*PixNum+1/2 1/2 HCYShow*PixNum+1/2])
     axis square
     axis tight
 else
     pbaspect([1 2 1]);
     axis tight
+    
 end
-
+set(gca,'xticklabel',{},'yticklabel',{})
 end
