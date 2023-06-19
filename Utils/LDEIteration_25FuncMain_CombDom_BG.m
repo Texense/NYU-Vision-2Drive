@@ -163,10 +163,10 @@ for Epc = 1:Epoc
 end
 
 if strcmpi(Outflag,'f(xn)')
-   disp('Showing f(xn)')
+   %disp('Showing f(xn)')
    LDERepFinal = LDEoutVec;
 elseif strcmpi(Outflag,'xn')
-   disp('Showing xn')
+   %disp('Showing xn')
    LDERepFinal = LDEItr;
 else
    disp('Unknown export flag, using xn')
