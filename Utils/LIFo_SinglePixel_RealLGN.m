@@ -38,10 +38,10 @@ function [f_EnIOut]...
                      lgnTF, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3 
                      S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
                      S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb                                   
-                     lgn_S, lgn_C,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
-...% A big problem:  lgn_COnOff,lgn_I was unquoted - so using 45 Hz by defalut                    
-                     gL_E,gL_I,Ve,Vi, tau_ref,... %5
+                     lgn_S, lgn_C,lgn_I,...%N_Slgn,N_Clgn,N_Ilgn, ...
+                     S_Elgn,S_Ilgn,... %7  
 ...% Below are LIF details
+                     gL_E,gL_I,Ve,Vi, tau_ref,... %5
                      tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
                      rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,... %4
                      HyperPara) % if varagin non empty, we only export the last state
@@ -73,7 +73,7 @@ dt = 0.1;
 
 % Note: If rate is per second, need to be divided by 1e3 to rescale to ms
 TimeFrac = 1/(LIFSimuT/1e3);%/lgnTF;
-CycPerSec = floor(LIFSimuT/1e3 * TimeFrac); % should be a whole nubmer, standing for simulation cyc per second.
+    %CycPerSec = floor(LIFSimuT/1e3 * TimeFrac); % should be a whole nubmer, standing for simulation cyc per second.
 
 %% For each cyc, initate a new start.
 CellSim = 5; % S4 S6 C1 C2 I4
@@ -123,22 +123,22 @@ for TInt = 1:TCyc
 
     % resample Amb, L6, L4 inputs for every segment;
     % These variables are 1 * Nt vectors
-    AmbR = [rS_amb;rS_amb;rC_amb;rC_amb;rI_amb];
-    L6R  = [rL6SU; rL6SU; rL6CU; rL6CU; rL6IU];
+    AmbR = [rS_amb;rS_amb;rC_amb;rC_amb;rI_amb]; % rQ_amb are per ms
+    L6R  = [rL6SU; rL6SU; rL6CU; rL6CU; rL6IU];  % rL6 are per ms
     L4ER = [L4SEU*(1-p_EEFail); 
             L4SEU*(1-p_EEFail); 
             L4CEU*(1-p_EEFail); 
             L4CEU*(1-p_EEFail); 
-            L4IEU]/1e3;
+            L4IEU]/1e3; % Need to count EE failure here 
     L4IR = [L4SIU; 
             L4SIU; 
             L4CIU; 
             L4CIU; 
-            L4IIU]/1e3;
-    AmbPix_Events = PoissonInputForNetwork(CellSim,AmbR,LIFSimuT*TimeFrac,dt,true); % rQ_amb are per ms
-    L6Pix_Events  = PoissonInputForNetwork(CellSim,L6R, LIFSimuT*TimeFrac,dt,true); % rL6 are per ms
-    L4Pix_EventsE = PoissonInputForNetwork(CellSim,L4ER,LIFSimuT*TimeFrac,dt,true); % Need to count EE failure here 
-    L4Pix_EventsI = PoissonInputForNetwork(CellSim,L4IR,LIFSimuT*TimeFrac,dt,true); % L4E/I are per second
+            L4IIU]/1e3; % L4E/I are per second
+    AmbPix_Events = PoissonInputForNetwork(CellSim,AmbR,LIFSimuT*TimeFrac,dt,true); 
+    L6Pix_Events  = PoissonInputForNetwork(CellSim,L6R, LIFSimuT*TimeFrac,dt,true); 
+    L4Pix_EventsE = PoissonInputForNetwork(CellSim,L4ER,LIFSimuT*TimeFrac,dt,true); 
+    L4Pix_EventsI = PoissonInputForNetwork(CellSim,L4IR,LIFSimuT*TimeFrac,dt,true); 
 
     % LGN input pissons are handeled specifically:
     if iscell(lgn_S) % drive: use REAL LGN!
@@ -164,7 +164,8 @@ for TInt = 1:TCyc
         end
     elseif isnumeric(lgn_S) && length(lgn_S) == 1 % bg
         disp('Background regime. Use Phase consistent LGN input')
-        lgn_Events = PoissonInputForNetwork(CellSim,[N_Slgn;N_Clgn;N_Ilgn].*[lgn_S;lgn_C;lgn_I],LIFSimuT*TimeFrac,dt,true); % lgn_Q should be per ms
+        lgnBGR = [4;6;1;2;4].*[lgn_S;lgn_S;lgn_C;lgn_C;lgn_I]; % first vec N_lgn used:S4 S6 C1 C2 I4
+        lgn_Events = PoissonInputForNetwork(CellSim,lgnBGR,LIFSimuT*TimeFrac,dt,true); % lgn_Q should be per ms
     else
         disp('***Illigal LGN input. Returning...')
     end
@@ -183,11 +184,11 @@ for TInt = 1:TCyc
     % Incorporate L4 and other input
     ampaInp = single([S_Elgn * lgnPix_Events(1:CellSim-1,:);            S_Ilgn * lgnPix_Events(end,:)]...
                     +  S_amb  * AmbPix_Events ... % S_amb identical for E and I
-                    + [S_EL6  * L6Pix_Events(1:CellSim-1,:) * rhoE_ampa; S_IL6 * L6Pix_Events(end,:) * rhoI_ampa]...
+                    + [S_EL6 * L6Pix_Events(1:CellSim-1,:) * rhoE_ampa; S_IL6 * L6Pix_Events(end,:) * rhoI_ampa]...
                     + [S_EE * L4Pix_EventsE(1:CellSim-1,:) * rhoE_ampa; S_IE * L4Pix_EventsE(end,:) * rhoI_ampa]);
     nmdaInp = single([S_EL6  * L6Pix_Events(1:CellSim-1,:) * rhoE_nmda; S_IL6 * L6Pix_Events(end,:) * rhoI_nmda]...
                     + [S_EE * L4Pix_EventsE(1:CellSim-1,:) * rhoE_nmda; S_IE * L4Pix_EventsE(end,:) * rhoI_nmda]);
-    gabaInp = single([S_EI * L4Pix_EventsI(1:CellSim-1,:);             S_II * L4Pix_EventsI(end,:)] );
+    gabaInp = single([S_EI * L4Pix_EventsI(1:CellSim-1,:);              S_II * L4Pix_EventsI(end,:)] );
     %% Precompute All Conductances: Speed up by ifft/fft
     n = size(ampaInp,2);
     GAMPA = ifft(fft(ampaInp',n) .* repmat(fft(KerAMPA',n),1,CellSim))';

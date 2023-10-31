@@ -31,8 +31,10 @@ addpath(DataFolder2)
 % Likely to use L6Mapctgr = 2;
 if length(varargin)<1
     L6Mapctgr = 1;
+    ExpTex = 'Linear';
 else
     L6Mapctgr = varargin{1};
+    ExpTex = 'Cosine';
 end
 % FlagLargeDom determines the domain
 if length(varargin)<2
@@ -42,8 +44,23 @@ else
 end
 DomStr = {'S','L','Ler'};
 
-%% Load sample data for network dynamics; L4 network parameters
+L6up = 60; L6low = 6; %[10 54; 12 50]
+
 DataPt = 'V4D2';
+LGNStr = sprintf('LGNc%d_SF%.1f_TF%d',LGNctgr,lgnSF, lgnTF);
+L6Str  = sprintf('L6c%d_uplow%d-%d_%s',L6ctgr, L6up,L6low, ExpTex);
+FileStr = sprintf(...
+    'Paper3_LIFLib%s_Ang%.1f_%s_%s_%s.mat',...
+              DataPt, Angle, LGNStr,L6Str,DomStr{FlagLargeDom})
+if isfile([SaveToFolder FileStr])
+    disp('Result data file exists. exiting...')
+    return
+else
+    disp('Result data file missing. running the rest of the script...')
+end
+
+%% Load sample data for network dynamics; L4 network parameters
+
 S = load(sprintf('AllMFPixPara_Paper2TuneFig1%s.mat',DataPt));
 % For part one: Preparing...
 C_SS_Pixel_Us = S.C_SS_Pixel_Us;
@@ -55,9 +72,9 @@ C_IC_Pixel_Us = S.C_IC_Pixel_Us;
 C_SI_Pixel_Us = S.C_SI_Pixel_Us;
 C_CI_Pixel_Us = S.C_CI_Pixel_Us;
 C_II_Pixel_Us = S.C_II_Pixel_Us;
-N_Slgn = S.N_Slgn; N_Clgn = S.N_Clgn; N_Ilgn = S.N_Ilgn;
+    %N_Slgn = S.N_Slgn; N_Clgn = S.N_Clgn; N_Ilgn = S.N_Ilgn;
 NS_L6 = S.NS_L6; NC_L6 = S.NC_L6; NI_L6 = S.NI_L6;
-L6Ord_F  = S.L6Ord_F;
+    %L6Ord_F  = S.L6Ord_F;
 N_HC = S.N_HC; NPixX = S.NPixX; NPixY = S.NPixY;
 FrSPixVec = S.FrSPixVec;
 FrCPixVec = S.FrCPixVec;
@@ -98,13 +115,13 @@ Angles_4Input = Angle + [0 45 90 135];
 %    45-abs(mod(Angles_4Input,180)-90)/2]/1e3;
 % redefine low-up bounds for L6: [10 54]
 NL6S = NS_L6; NL6C = NC_L6; NL6I = NI_L6;
-L6up = 60; L6low = 6; %[10 54; 12 50]
+
 if L6Mapctgr == 1
     FL6_Angle1 = ((abs(mod(Angles_4Input,180)-90)/90)      *(L6up-L6low)+L6low) /1e3; % get L6 frs
-    ExpTex = 'Linear';
+    
 elseif L6Mapctgr == 2
     FL6_Angle1 = ((cosd(abs(mod(Angles_4Input,180))*2)+1)/2*(L6up-L6low)+L6low) /1e3;
-    ExpTex = 'Cosine';
+    
 else
     disp("illigal L6 mapping.")
 end
@@ -170,12 +187,15 @@ switch FlagLargeDom
     case 1
         L4ERange = 0:100:ceil(max(L4Eall)*1.5/100)*100;
         L4IDiffRange = -20*Bdry:100:20*Bdry;
+        HyperPara = {50*1e3};
     case 2
         L4ERange = 0:600:ceil(max(L4Eall)*12/100)*100;
         L4IDiffRange = -120*Bdry:600:60*Bdry;
-    case 3
-        L4ERange = 0:2000:ceil(max(L4Eall)*50/100)*100;
-        L4IDiffRange = -500*Bdry:2000:500*Bdry;
+        HyperPara = {50*1e3};
+    case 3 % remember: can't do too much computation here. Firing rates could be too high to run
+        L4ERange = 0:4000:ceil(max(L4Eall)*50/100)*100;
+        L4IDiffRange = -500*Bdry:4000:500*Bdry;
+        HyperPara = {20*1e3}; % let's keep Larger simulation shorter in time
 end
 
 %% Start parallel computation
@@ -192,7 +212,7 @@ f_EnIOut = cell(a0,1);
 % FailureIndicate = zeros(a0,1);
 L4ERcrd = zeros(a0,1);
 L4IRcrd = zeros(a0,1);
-HyperPara = {50*1e3};
+
 parfor  LDEInd = 1:a0
     L4EInd = ceil(LDEInd/length(L4IDiffRange));
     L4IDiffInd = mod(LDEInd,length(L4IDiffRange));
@@ -218,9 +238,10 @@ parfor  LDEInd = 1:a0
         lgnTF, L4SEU,L4SIU, L4CEU,L4CIU, L4IEU,L4IIU,... %3
         S_EE,S_EI,S_IE,S_II,p_EEFail,... %5
         S_EL6,S_IL6,rL6SU,rL6CU,rL6IU,S_amb,rS_amb,rC_amb,rI_amb,...%7 L6 Amb
-        lgn_S, lgn_C,lgn_I,N_Slgn,N_Clgn,N_Ilgn, S_Elgn,S_Ilgn,... %7
-        gL_E,gL_I,Ve,Vi, tau_ref,... %5
+        lgn_S, lgn_C,lgn_I,...%N_Slgn,N_Clgn,N_Ilgn, ...
+        S_Elgn,S_Ilgn,... %7
         ...% Below are LIF details
+        gL_E,gL_I,Ve,Vi, tau_ref,... %5
         tau_ampa_R,tau_ampa_D,tau_nmda_R,tau_nmda_D,tau_gaba_R,tau_gaba_D,... %7
         rhoE_ampa,rhoE_nmda,rhoI_ampa,rhoI_nmda,... %4
         HyperPara); % if varagin non empty, we only export the last state
@@ -231,11 +252,6 @@ end
 %CurrentFolder = pwd;
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 
-LGNStr = sprintf('LGNc%d_SF%.1f_TF%d',LGNctgr,lgnSF, lgnTF);
-L6Str  = sprintf('L6c%d_uplow%d-%d_%s',L6ctgr, L6up,L6low, ExpTex);
-FileStr = sprintf(...
-    'Paper3_LIFLib%s_Ang%.1f_%s_%s_%s.mat',...
-              DataPt, Angle, LGNStr,L6Str,DomStr{FlagLargeDom})
 save([SaveToFolder FileStr],...
     'f_EnIOut','L4ERcrd','L4IRcrd')
 end

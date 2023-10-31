@@ -1,6 +1,6 @@
 ## Angle: 0 7.5 15 22.5
-for Angle   in 0 7.5 15 22.5; do
-for LGNctgr in $(seq 1 5); do
+for Angle   in 22.5; do
+for LGNctgr in $(seq 4 5); do
 for lgnTF in 10; do
 for lgnSF in 2.5; do
 for L6ctgr  in $(seq 1 5); do
