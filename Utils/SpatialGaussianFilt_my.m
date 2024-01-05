@@ -8,7 +8,13 @@
 % Output: SpatInputFilt: vector of filtered input
 % 10/29/2021
 
-function SpatInputFilt = SpatialGaussianFilt_my(OD_SMap,N_HC,n_S_HC,FiltSig,Trunc,FigOn)
+function SpatInputFilt = SpatialGaussianFilt_my(OD_SMap,N_HC,n_S_HC,FiltSig,Trunc,FigOn,varargin)
+if ~isempty(varargin)
+    BaseRate = varargin{1};
+    %: BaseRate should be a row vector N*1, N is the OD category number
+    % Now the output is the input rate for each neuron
+end
+
 [a,b] = size(OD_SMap);
 if a~=b
     disp("Warning! Spatial map not square")
@@ -37,26 +43,41 @@ N_expand = ceil(N_HC/2)+1;
 Pattern_expand = repmat(Pattern22,N_expand,N_expand);
 
 CtgrList = unique(OD_SMap);
-SpatInputFilt = zeros(a*b,length(CtgrList));
-for CtgrInd = 1:length(CtgrList)
-    Pattern_1ctgr = zeros(size(Pattern_expand));
-    Pattern_1ctgr(Pattern_expand == CtgrList(CtgrInd)) = 1;
-    Pattern_1ctgr_Gauss = conv2(Pattern_1ctgr,TruncGausKer);
-    Pattern_1ctgr_Gauss = Pattern_1ctgr_Gauss(cut1+1:end-cut2,cut1+1:end-cut2); % cut exteriors
-    % Only get the original part
-    Pattern_1ctgr_Gauss = Pattern_1ctgr_Gauss(n_S_HC+1:(N_HC+1)*n_S_HC,n_S_HC+1:(N_HC+1)*n_S_HC);
-    SpatInputFilt(:,CtgrInd) = reshape(Pattern_1ctgr_Gauss,a*b,1);
-end
-
-if FigOn
-    figure
+if isempty(varargin)
+    SpatInputFilt = zeros(a*b,length(CtgrList));
     for CtgrInd = 1:length(CtgrList)
-        subplot(1,length(CtgrList),CtgrInd)
-        ShowField(SpatInputFilt(:,CtgrInd), 1:a*b,a,b,'',[],n_S_HC)
-%         set(gca,'YDir','Normal')
-%         colorbar
-%         axis square
+        Pattern_1ctgr = zeros(size(Pattern_expand));
+        Pattern_1ctgr(Pattern_expand == CtgrList(CtgrInd)) = 1;
+        Pattern_1ctgr_Gauss = conv2(Pattern_1ctgr,TruncGausKer);
+        Pattern_1ctgr_Gauss = Pattern_1ctgr_Gauss(cut1+1:end-cut2,cut1+1:end-cut2); % cut exteriors
+        % Only get the original part
+        Pattern_1ctgr_Gauss = Pattern_1ctgr_Gauss(n_S_HC+1:(N_HC+1)*n_S_HC,n_S_HC+1:(N_HC+1)*n_S_HC);
+        SpatInputFilt(:,CtgrInd) = reshape(Pattern_1ctgr_Gauss,a*b,1);
     end
+
+    if FigOn
+        figure
+        for CtgrInd = 1:length(CtgrList)
+            subplot(1,length(CtgrList),CtgrInd)
+            ShowField(SpatInputFilt(:,CtgrInd), 1:a*b,a,b,'',[],n_S_HC)
+            %         set(gca,'YDir','Normal')
+            %         colorbar
+            %         axis square
+        end
+    end
+else
+    
+    SpatInputFiltPre = zeros(a*b,length(CtgrList));
+    for CtgrInd = 1:length(CtgrList)
+        Pattern_1ctgr = zeros(size(Pattern_expand));
+        Pattern_1ctgr(Pattern_expand == CtgrList(CtgrInd)) = 1;
+        Pattern_1ctgr_Gauss = conv2(Pattern_1ctgr,TruncGausKer);
+        Pattern_1ctgr_Gauss = Pattern_1ctgr_Gauss(cut1+1:end-cut2,cut1+1:end-cut2); % cut exteriors
+        % Only get the original part
+        Pattern_1ctgr_Gauss = Pattern_1ctgr_Gauss(n_S_HC+1:(N_HC+1)*n_S_HC,n_S_HC+1:(N_HC+1)*n_S_HC);
+        SpatInputFiltPre(:,CtgrInd) = reshape(Pattern_1ctgr_Gauss,a*b,1);
+    end
+    SpatInputFilt = SpatInputFiltPre * BaseRate';
 end
 
 end
