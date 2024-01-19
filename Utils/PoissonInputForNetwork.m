@@ -43,6 +43,7 @@ end
 
 
 function arrt = Poisson_Process_2(lambda,T)
+%rng('shuffle')
 npoints = poissrnd(lambda*T);
 % When event number N is fixed, the event time are distributed averagely.
 if (npoints>0)

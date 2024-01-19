@@ -1,6 +1,6 @@
 % Figure1: Based on the Super fine contours HPC, do network simulation for both drive and BG
-
-function [] = Paper3_TestParDriveHPC(SIlgnMpt, Grating)
+% varargin: integer: sample index.
+function [] = Paper3_TestParDriveHPC(SIlgnMpt, Grating, varargin)
 %% 0: make dirs
 CurrentFolder = pwd
 %FigurePath = [CurrentFolder '/Figures'];
@@ -11,15 +11,22 @@ DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/'];
 DataFolder1 = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 addpath(DataFolder)
 addpath(DataFolder1)
-SaveFolder = [DataFolder sprintf('SIlgnMpt%.3f_Ang%.1f/',SIlgnMpt,Grating)];
+if isempty(varargin)
+    NWSampleInd = '';
+else
+    NWSampleInd = sprintf('%d', varargin{1});
+end
+
+
+SaveFolder = [DataFolder sprintf('Paper3NWData/SIlgnMpt%.3f_Ang%.1f_sample%s/',SIlgnMpt,Grating,NWSampleInd)];
 if ~exist(SaveFolder, 'dir')
     mkdir(SaveFolder)
-else
-    listing = dir(SaveFolder);
-    if numel(listing)>2
-        disp('A previous simulation has been carried out on a nearby point. Return...')
-        return
-    end
+% else
+%     listing = dir(SaveFolder);
+%     if numel(listing)>2
+%         disp('A previous simulation has been carried out on a nearby point. Return...')
+%         return
+%     end
 end
 addpath(SaveFolder)
 %% 1.1 Setting up network
@@ -88,48 +95,7 @@ CMap_Ori2Ext = find(NnCex.X>n_C_HC & NnCex.X<=4*n_C_HC ...
                   & NnCex.Y>n_C_HC & NnCex.Y<=4*n_C_HC);
 IMap_Ori2Ext = find(NnIex.X>n_I_HC & NnIex.X<=4*n_I_HC ...
                   & NnIex.Y>n_I_HC & NnIex.Y<=4*n_I_HC);
-% from extended back to original: fold
-% E
-SMap_Ext2Ori = FoldExMap2Ori(NnSex,NnS,SMap_Ori2Ext,N_S,n_S_HC);
-CMap_Ext2Ori = FoldExMap2Ori(NnCex,NnC,CMap_Ori2Ext,N_C,n_C_HC);
-% I
-IMap_Ext2Ori = FoldExMap2Ori(NnIex,NnI,IMap_Ori2Ext,N_I,n_I_HC);
-% determine connections between E, I sparse metrices containing 0 or 1.
-% Row_i Column_j means neuron j projects to neuron i add periodic boundary
-% EE
-C_SS_Fix_Bd = ConnectionMat_FB_SimCplx(N_S,NnSex,Size_S, SMap_Ori2Ext, 1:N_S,...% 
-                                       N_S,NnSex,Size_S, SMap_Ext2Ori, 1:N_S,...
-                                       Peak_EE,SD_E,Dist_LB,1, round(N_SS));
-C_SC_Fix_Bd = ConnectionMat_FB_SimCplx(N_S,NnSex,Size_S, SMap_Ori2Ext, 1:N_S,...% 
-                                       N_C,NnCex,Size_C, CMap_Ext2Ori, 1:N_C,...
-                                       Peak_EE,SD_E,Dist_LB,0, round(N_SC));
-C_CS_Fix_Bd = ConnectionMat_FB_SimCplx(N_C,NnCex,Size_C, CMap_Ori2Ext, 1:N_C,...% 
-                                       N_S,NnSex,Size_S, SMap_Ext2Ori, 1:N_S,...
-                                       Peak_EE,SD_E,Dist_LB,0, round(N_CS));
-C_CC_Fix_Bd = ConnectionMat_FB_SimCplx(N_C,NnCex,Size_C, CMap_Ori2Ext, 1:N_C,...% 
-                                       N_C,NnCex,Size_C, CMap_Ext2Ori, 1:N_C,...
-                                       Peak_EE,SD_E,Dist_LB,1, round(N_CC));
-C_EE_Fix_Bd = [C_SS_Fix_Bd, C_SC_Fix_Bd; C_CS_Fix_Bd, C_CC_Fix_Bd];
-% EI
-C_SI_Fix_Bd = ConnectionMat_FB_SimCplx(N_S,NnSex,Size_S, SMap_Ori2Ext, 1:N_S,...
-                                       N_I,NnIex,Size_I, IMap_Ext2Ori, 1:N_I,...
-                                       Peak_I,SD_I,Dist_LB,0, round(N_SI));
-C_CI_Fix_Bd = ConnectionMat_FB_SimCplx(N_C,NnCex,Size_C, CMap_Ori2Ext, 1:N_C,...
-                                       N_I,NnIex,Size_I, IMap_Ext2Ori, 1:N_I,...
-                                       Peak_I,SD_I,Dist_LB,0, round(N_CI));
-C_EI_Fix_Bd = [C_SI_Fix_Bd; C_CI_Fix_Bd];
-% IE
-C_IS_Fix_Bd = ConnectionMat_FB_SimCplx(N_I,NnIex,Size_I, IMap_Ori2Ext, 1:N_I,...
-                                       N_S,NnSex,Size_S, SMap_Ext2Ori, 1:N_S,...
-                                       Peak_I,SD_E,Dist_LB,0, round(N_IS));
-C_IC_Fix_Bd = ConnectionMat_FB_SimCplx(N_I,NnIex,Size_I, IMap_Ori2Ext, 1:N_I,...
-                                       N_C,NnCex,Size_C, CMap_Ext2Ori, 1:N_C,...
-                                       Peak_I,SD_E,Dist_LB,0, round(N_IC));
-C_IE_Fix_Bd = [C_IS_Fix_Bd, C_IC_Fix_Bd];
-% II
-C_II_Fix_Bd = ConnectionMat_Fix_Boundary(N_I,NnIex,Size_I, IMap_Ori2Ext,...
-                                         N_I,NnIex,Size_I, IMap_Ext2Ori,...
-                                         Peak_I,SD_I,Dist_LB,1, round(N_II));
+
 %% physiolocial parameters
 p_EEFail = 0.2; S_amb = 0.01;
 rS_amb = 0.6;
@@ -189,6 +155,52 @@ RefTimeI = InIs.RefTimeI; VI = InIs.VI; SpI = InIs.SpI; GI_ampa_R = InIs.GI_ampa
 GI_ampa_D = InIs.GI_ampa_D; GI_nmda_D = InIs.GI_nmda_D; GI_gaba_D = InIs.GI_gaba_D;
 EEDlyRcd = sparse(N_E,N_EEDly);
 IEDlyRcd = sparse(N_I,N_IEDly);
+clear InEs InIs
+
+% from extended back to original: fold
+% E
+SMap_Ext2Ori = FoldExMap2Ori(NnSex,NnS,SMap_Ori2Ext,N_S,n_S_HC);
+CMap_Ext2Ori = FoldExMap2Ori(NnCex,NnC,CMap_Ori2Ext,N_C,n_C_HC);
+% I
+IMap_Ext2Ori = FoldExMap2Ori(NnIex,NnI,IMap_Ori2Ext,N_I,n_I_HC);
+% determine connections between E, I sparse metrices containing 0 or 1.
+% Row_i Column_j means neuron j projects to neuron i add periodic boundary
+% EE
+C_SS_Fix_Bd = ConnectionMat_FB_SimCplx(N_S,NnSex,Size_S, SMap_Ori2Ext, 1:N_S,...% 
+                                       N_S,NnSex,Size_S, SMap_Ext2Ori, 1:N_S,...
+                                       Peak_EE,SD_E,Dist_LB,1, round(N_SS));
+C_SC_Fix_Bd = ConnectionMat_FB_SimCplx(N_S,NnSex,Size_S, SMap_Ori2Ext, 1:N_S,...% 
+                                       N_C,NnCex,Size_C, CMap_Ext2Ori, 1:N_C,...
+                                       Peak_EE,SD_E,Dist_LB,0, round(N_SC));
+C_CS_Fix_Bd = ConnectionMat_FB_SimCplx(N_C,NnCex,Size_C, CMap_Ori2Ext, 1:N_C,...% 
+                                       N_S,NnSex,Size_S, SMap_Ext2Ori, 1:N_S,...
+                                       Peak_EE,SD_E,Dist_LB,0, round(N_CS));
+C_CC_Fix_Bd = ConnectionMat_FB_SimCplx(N_C,NnCex,Size_C, CMap_Ori2Ext, 1:N_C,...% 
+                                       N_C,NnCex,Size_C, CMap_Ext2Ori, 1:N_C,...
+                                       Peak_EE,SD_E,Dist_LB,1, round(N_CC));
+C_EE_Fix_Bd = [C_SS_Fix_Bd, C_SC_Fix_Bd; C_CS_Fix_Bd, C_CC_Fix_Bd];
+% EI
+C_SI_Fix_Bd = ConnectionMat_FB_SimCplx(N_S,NnSex,Size_S, SMap_Ori2Ext, 1:N_S,...
+                                       N_I,NnIex,Size_I, IMap_Ext2Ori, 1:N_I,...
+                                       Peak_I,SD_I,Dist_LB,0, round(N_SI));
+C_CI_Fix_Bd = ConnectionMat_FB_SimCplx(N_C,NnCex,Size_C, CMap_Ori2Ext, 1:N_C,...
+                                       N_I,NnIex,Size_I, IMap_Ext2Ori, 1:N_I,...
+                                       Peak_I,SD_I,Dist_LB,0, round(N_CI));
+C_EI_Fix_Bd = [C_SI_Fix_Bd; C_CI_Fix_Bd];
+% IE
+C_IS_Fix_Bd = ConnectionMat_FB_SimCplx(N_I,NnIex,Size_I, IMap_Ori2Ext, 1:N_I,...
+                                       N_S,NnSex,Size_S, SMap_Ext2Ori, 1:N_S,...
+                                       Peak_I,SD_E,Dist_LB,0, round(N_IS));
+C_IC_Fix_Bd = ConnectionMat_FB_SimCplx(N_I,NnIex,Size_I, IMap_Ori2Ext, 1:N_I,...
+                                       N_C,NnCex,Size_C, CMap_Ext2Ori, 1:N_C,...
+                                       Peak_I,SD_E,Dist_LB,0, round(N_IC));
+C_IE_Fix_Bd = [C_IS_Fix_Bd, C_IC_Fix_Bd];
+% II
+C_II_Fix_Bd = ConnectionMat_Fix_Boundary(N_I,NnIex,Size_I, IMap_Ori2Ext,...
+                                         N_I,NnIex,Size_I, IMap_Ext2Ori,...
+                                         Peak_I,SD_I,Dist_LB,1, round(N_II));
+
+
 %E_SpHis= []; I_SpHis=[];
 E_Sp = []; I_Sp = [];
 VE_T = []; VI_T = [];
@@ -211,6 +223,7 @@ NWTrace.BlowUp = false;
 S_Ind = 1:N_S; C_Ind = N_S+1:N_E;
 I_Ind = 1:N_I;
 tic
+rng("shuffle")
 for TimeN = 1:floor(T/dt)
     [oRefTimeE,oVE,oSpE,oGE_ampa_R,oGE_nmda_R,oGE_gaba_R,... % Output
         oGE_ampa_D,oGE_nmda_D,oGE_gaba_D,...
@@ -361,7 +374,7 @@ rI_L6_Drive = L6IFilt;
 % Making Poisson here/Reading
 TimeFrac = 0.05;
 LGNCurInp = 0;
-
+rng("shuffle")
 lgnE_Events = PoissonInputForNetwork(N_E,lambda_E_drive_Pre*(1-LGNCurInp),T*TimeFrac,dt);
 lgnI_Events = PoissonInputForNetwork(N_I,lambda_I_drive_Pre*(1-LGNCurInp),T*TimeFrac,dt);
 AmbE_Events = PoissonInputForNetwork(N_E,rE_amb,T*TimeFrac,dt);

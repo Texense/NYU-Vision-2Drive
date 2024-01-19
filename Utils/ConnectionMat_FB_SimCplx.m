@@ -50,6 +50,8 @@ for postNn = 1:length(PostUse) % for each post synaptic cell, do
     
     % Probability of having a projection
     P_ProjUse = Peak_EE * exp(-EffDist.^2/(2*SD_E^2)); 
+
+    rng('shuffle')
     ConnDeter = unique(randsample(EffInd2,NPreSyn*10,true,P_ProjUse/sum(P_ProjUse)),'stable');
                 % get a unique list of presyn neurons
                 % Presuambly ConnDeter contains more presyn neurons than we

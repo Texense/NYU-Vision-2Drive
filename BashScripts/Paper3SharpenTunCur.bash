@@ -12,8 +12,8 @@ module purge
 module load matlab/2020b
 
 cd /scratch/$USER/NYU-Vision-2Drive
-echo "${SIlgnMpt},${Grating}" 
-matlab -r "Paper3_TestParDriveHPC(${SIlgnMpt},${Grating})"
+echo "${SIlgnMpt},${Grating},${SampleInd}" 
+matlab -r "Paper3_TestParDriveHPC(${SIlgnMpt},${Grating},${SampleInd})"
 
 
 

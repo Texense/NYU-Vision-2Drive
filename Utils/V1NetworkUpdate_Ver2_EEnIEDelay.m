@@ -50,22 +50,26 @@ oVI(oVI>=1) = nan; % nan represent refractory
 %p_Elgn = 1-exp(-dt*lambda_E); p_Ilgn = 1-exp(-dt*lambda_I); % Caution! lambda with unit ms^-1
 p_Elgn = dt*lambda_E; p_Ilgn = dt*lambda_I;
 %SpE_lgn = sparse(poissrnd(p_Elgn,size(VE))); SpI_lgn = sparse(poissrnd(p_Ilgn,size(VI)));
-SpE_lgn = sparse(double(rand(size(VE))<=p_Elgn)); SpI_lgn = sparse(double(rand(size(VI))<=p_Ilgn));
+SpE_lgn = sparse(double(rand(size(VE))<=p_Elgn)); 
+SpI_lgn = sparse(double(rand(size(VI))<=p_Ilgn));
 % and Ambient
 %p_EAmb = 1-exp(-dt*rE_amb); p_IAmb = 1-exp(-dt*rI_amb); % Caution! r with unit ms^-1
 p_EAmb = dt*rE_amb; p_IAmb = dt*rI_amb;
 % SpE_amb = sparse(poissrnd(p_EAmb,size(VE))); SpI_amb = sparse(poissrnd(p_IAmb,size(VI)));
-SpE_amb = sparse(double(rand(size(VE))<=p_EAmb)); SpI_amb = sparse(double(rand(size(VI))<=p_IAmb));
+SpE_amb = sparse(double(rand(size(VE))<=p_EAmb)); 
+SpI_amb = sparse(double(rand(size(VI))<=p_IAmb));
 % L6
 p_EL6  = dt*rE_L6; p_IL6 = dt*rI_L6;
 % SpE_L6 = sparse(poissrnd(p_EL6,size(VE))); SpI_L6 = sparse(poissrnd(p_IL6,size(VI)));
-SpE_L6 = sparse(double(rand(size(VE))<=p_EL6)); SpI_L6 = sparse(double(rand(size(VI))<=p_IL6));
+SpE_L6 = sparse(double(rand(size(VE))<=p_EL6)); 
+SpI_L6 = sparse(double(rand(size(VI))<=p_IL6));
 
 
 %% E-to-E
 % Synaptic Failure
 RawEPSS_E = EEDlyRcd(:,1);%EPSS = e to e post synaptic spike effect
 [nE1_E,nE2_E,Raw_NonZero_E]  = find(RawEPSS_E);
+%rng('shuffle')
 SynFail = binornd(Raw_NonZero_E,1-p_EEFail);
 EPSS_E = sparse(nE1_E,nE2_E,SynFail,size(RawEPSS_E,1),size(RawEPSS_E,2));
 % E-to-I has 1.Delay 

@@ -62,7 +62,9 @@ FrIPixVec = S.FrIPixVec;
 S_EE=S.S_EE; S_EI=S.S_EI; S_IE=S.S_IE; S_II=S.S_II; p_EEFail=S.p_EEFail; 
 S_EL6=S.S_EL6; S_IL6=S.S_IL6; 
 S_amb=S.S_amb; rS_amb=S.rS_amb; rC_amb=S.rC_amb; rI_amb=S.rI_amb;                                 
-S_Elgn=S.S_Elgn; S_Ilgn=S.S_Ilgn; 
+S_Elgn=S.S_Elgn; 
+% Changning SILGN
+S_Ilgn=S.S_Ilgn * 1.1; 
 gL_E=S.gL_E; gL_I=S.gL_I; Ve=S.Ve; Vi=S.Vi;  tau_ref=S.tau_ref; 
 
 tau_ampa_R=S.tau_ampa_R; tau_ampa_D=S.tau_ampa_D; 
@@ -199,7 +201,7 @@ end
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/'];
 
 save([SaveFolder ...
-      sprintf('Paper2_LIFoLDE_Fig1%s_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s%s.mat',...
+      sprintf('Paper2_LIFoLDE_Fig1_SIlgn1.1%s_Ang%.1f_LGNc%d_L6c%d_L6_%d_%d_%s%s.mat',...
       DataPt, Angle, LGNctgr, L6ctgr, L6up,L6low, ExpTex,DomStr{FlagLargeDom})],...
     'f_EnIOut','L4ERcrd','L4IRcrd')    
 end

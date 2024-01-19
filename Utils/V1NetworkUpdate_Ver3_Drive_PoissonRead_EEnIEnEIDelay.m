@@ -70,6 +70,7 @@ oVI(oVI>=1) = nan; % nan represent refractory
 %% E-to-E has 1.Delay and 2.Synaptic Failure
 RawEPSS_E = EEDlyRcd(:,1);%EPSS = e to e post synaptic spike effect
 [nE1_E,nE2_E,Raw_NonZero_E]  = find(RawEPSS_E);
+%rng('shuffle')
 SynFail_E = binornd(Raw_NonZero_E,1-p_EEFail);
 EPSS_E = sparse(nE1_E,nE2_E,SynFail_E,size(RawEPSS_E,1),size(RawEPSS_E,2));
 % E-to-I has 1.Delay 
