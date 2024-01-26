@@ -1,6 +1,6 @@
 % Figure1: Based on the Super fine contours HPC, do network simulation for both drive and BG
 % varargin: integer: sample index.
-function [] = Paper3_TestParDriveHPC(SIlgnMpt, Grating, varargin)
+function [] = Paper3_TestL6ShapeDriveHPC(L6Intesect,L6Shape, L6End, Grating, varargin)
 %% 0: make dirs
 CurrentFolder = pwd
 %FigurePath = [CurrentFolder '/Figures'];
@@ -18,7 +18,7 @@ else
 end
 
 
-SaveFolder = [DataFolder sprintf('Paper3NWData/SIlgnMpt%.3f_Ang%.1f_sample%s/',SIlgnMpt,Grating,NWSampleInd)];
+SaveFolder = [DataFolder sprintf('Paper3NWData/L6Int%.2fL6Sh%.2fend%.2f_Ang%.1f_sample%s/',L6Intesect,L6Shape,L6End,Grating,NWSampleInd)];
 if ~exist(SaveFolder, 'dir')
     mkdir(SaveFolder)
 % else
@@ -124,7 +124,7 @@ rI_L6 = NI_L6*rL6_One;
 rE_L6 = (rS_L6*double(~EcplxInd) + rC_L6*double(EcplxInd))';     %rI_L6 = rE_L6*3; %250hz for now
 % Make up LGN
 S_Elgn = 2*S_EE;
-S_Ilgn = SIlgnMpt*2*S_Elgn;
+S_Ilgn = 2*S_Elgn;
 %N_Slgn = 4.75; N_Clgn = 1.25; N_Ilgn = 4.5;
 N_Slgn = 4.75; N_Clgn = 1.5; N_Ilgn = 4.5;
 lambda_E = 0.02*[N_Slgn*ones(N_S,1);N_Clgn*ones(N_C,1)]; % ~16 LGN spike can excite a E neurons. 0.25 spike/ms makes 64 ms for such period.
@@ -333,7 +333,6 @@ PhaseE = single(tMod*rand(N_E,1));
 %Grating = 0; % degree already defined in input
 GratingHC = Grating + [0,45,90,135]; % grating for opt, obl1, ort, and obl2
 PhaseFRS_Grating = [45+(cosd(abs(mod(GratingHC,180))*2)+1)/2*45,45-(cosd(abs(mod(GratingHC,180))*2)+1)/2*45]*N_Slgn/1e3;
-%PhaseFRC = [90 67.5 45 67.5,    0  22.5 45 22.5] *N_Clgn/1e3 * StimulusFac;
 PhaseFRC = 45*ones(1,8) *N_Clgn/1e3 * StimulusFac;
 
 % T partition
@@ -349,8 +348,11 @@ lambda_I_drive_Pre = 45 *N_Ilgn/1e3 * StimulusFac;
 %L6Ord_F = [50 33 15 33];
 %L6Ord_F = [50 30 10 30];
 L6Ord_F = [60 33 6 33];
+% L6Ord_F_Grating = min(L6Ord_F) + ...
+%     (max(L6Ord_F)-min(L6Ord_F))*(cosd(abs(mod(GratingHC,180))*2)+1)/2; 
+ScaledLGN = (cosd(abs(mod(GratingHC,180))*2)+1)/2; % should be between 0 and 1;
 L6Ord_F_Grating = min(L6Ord_F) + ...
-    (max(L6Ord_F)-min(L6Ord_F))*(cosd(abs(mod(GratingHC,180))*2)+1)/2;                                
+     (max(L6Ord_F)-min(L6Ord_F)) * rescaledSigmoid(ScaledLGN, L6Intesect, L6Shape) * L6End;
 L6S_Drive = L6Ord_F_Grating*NS_L6/1e3 * StimulusFac;
 L6C_Drive = L6Ord_F_Grating*NC_L6/1e3 * StimulusFac;
 L6I_Drive = L6Ord_F_Grating*NI_L6/1e3 * StimulusFac;
@@ -568,7 +570,7 @@ for TSec = 1:TPar
         % the end of iteration
     end
     toc
-    DriveFName = [sprintf('DriveWkSp_SIlgnMpt%.3f_Ang%.1f',SIlgnMpt,Grating) num2str(TSec) 's.mat'];
+    DriveFName = [sprintf('DriveWkSp_L6Sh%.2f_Ang%.1f',L6Shape,Grating) num2str(TSec) 's.mat'];
     EndState = {RefTimeE, VE, SpE, GE_ampa_R, GE_nmda_R, GE_gaba_R, GE_ampa_D, GE_nmda_D, GE_gaba_D,...
         RefTimeI, VI, SpI, GI_ampa_R, GI_nmda_R, GI_gaba_R, GI_ampa_D, GI_nmda_D, GI_gaba_D,...
         EEDlyRcd, IEDlyRcd};

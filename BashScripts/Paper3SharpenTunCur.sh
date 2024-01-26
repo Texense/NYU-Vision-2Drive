@@ -1,6 +1,6 @@
-for SIlgnMpt in $(seq 1 0.04 1.2); do
+for SIlgnMpt in $(seq 1 0.04 1.4); do
 for Grating in $(seq 0 7.5 22.5); do
-for SampleInd in $(seq 1 10); do
+for SampleInd in $(seq 1 20); do
 #
 echo "${SIlgnMpt},${Grating},${SampleInd}" 
 export SIlgnMpt Grating SampleInd

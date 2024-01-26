@@ -5,39 +5,71 @@
 function [AnglePlot,TuningCurveTrunc,TunCurColor,PreferAng] = TuningCurve(...
     TruncList,AngleList,FrTunCurveRawDataAll,...
     x,y,AngleAll,NPixX,NPixY,cmap)
+fieldsTCCurve = fieldnames(FrTunCurveRawDataAll{1}.FrTunCurAllPix{y,x});
+% Initialize a all needed variables with the same fields
+FrPixsAll = struct();
+FrData1Trunc = struct();
+TuningCurveTrunc = struct();
 
-FrPixsAll.S = zeros(8,length(TruncList),length(AngleList));
-FrPixsAll.C = zeros(8,length(TruncList),length(AngleList));
+for FInd = 1:length(fieldsTCCurve)
+    FieldName = fieldsTCCurve{FInd};
+    FrPixsAll.(FieldName) = zeros(8,length(TruncList),length(AngleList));
+    TuningCurveTrunc.(FieldName) = zeros(8*length(AngleList),length(TruncList));
+end
+
+% FrPixsAll.S = zeros(8,length(TruncList),length(AngleList));
+% FrPixsAll.C = zeros(8,length(TruncList),length(AngleList));
 for AngCtgr = 1: length(AngleList)
-    FrPixsAll.S(:,:,AngCtgr) = FrTunCurveRawDataAll{AngCtgr}.FrTunCurAllPix{y,x}.S;
-    FrPixsAll.C(:,:,AngCtgr) = FrTunCurveRawDataAll{AngCtgr}.FrTunCurAllPix{y,x}.C;
+    for FInd = 1:length(fieldsTCCurve)
+        FieldName = fieldsTCCurve{FInd};
+        FrPixsAll.(FieldName)(:,:,AngCtgr) = FrTunCurveRawDataAll{AngCtgr}.FrTunCurAllPix{y,x}.(FieldName);
+    end
+%     FrPixsAll.S(:,:,AngCtgr) = FrTunCurveRawDataAll{AngCtgr}.FrTunCurAllPix{y,x}.S;
+%     FrPixsAll.C(:,:,AngCtgr) = FrTunCurveRawDataAll{AngCtgr}.FrTunCurAllPix{y,x}.C;
 end
 
 % Get the tuning curves for different truncations
-TuningCurveTrunc.S = zeros(8*length(AngleList),length(TruncList));
-TuningCurveTrunc.C = zeros(8*length(AngleList),length(TruncList));
+%TuningCurveTrunc.S = zeros(8*length(AngleList),length(TruncList));
+%TuningCurveTrunc.C = zeros(8*length(AngleList),length(TruncList));
 PixOrder = [1,2,7,4,5,6,3,8];% Group order of pixels
 %PixOrder = 1:8;% Group order of pixels
 for TruncInd = 1:length(TruncList)
-    FrData1Trunc.S = squeeze(FrPixsAll.S(:,TruncInd,:));
-    FrData1Trunc.C = squeeze(FrPixsAll.C(:,TruncInd,:));
+    for FInd = 1:length(fieldsTCCurve)
+        FieldName = fieldsTCCurve{FInd};
+        FrData1Trunc.(FieldName) = squeeze(FrPixsAll.(FieldName)(:,TruncInd,:));
+    end
+%     FrData1Trunc.S = squeeze(FrPixsAll.S(:,TruncInd,:));
+%     FrData1Trunc.C = squeeze(FrPixsAll.C(:,TruncInd,:));
     
     for PixUseInd = 1:8
         PixU = PixOrder(PixUseInd);
         if mod(PixUseInd,2) == 1
-            TuningCurveTrunc.C(...
-                (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
-                TruncInd) = FrData1Trunc.C(PixU,:)';
-            TuningCurveTrunc.S(...
-                (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
-                TruncInd) = FrData1Trunc.S(PixU,:)';
+            for FInd = 1:length(fieldsTCCurve)
+                FieldName = fieldsTCCurve{FInd};
+                TuningCurveTrunc.(FieldName)(...
+                    (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
+                    TruncInd) = FrData1Trunc.(FieldName)(PixU,:)';
+            end
+
+%             TuningCurveTrunc.C(...
+%                 (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
+%                 TruncInd) = FrData1Trunc.C(PixU,:)';
+%             TuningCurveTrunc.S(...
+%                 (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
+%                 TruncInd) = FrData1Trunc.S(PixU,:)';
         else
-            TuningCurveTrunc.C(...
-                (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
-                TruncInd) = FrData1Trunc.C(PixU,end:-1:1)';
-            TuningCurveTrunc.S(...
-                (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
-                TruncInd) = FrData1Trunc.S(PixU,end:-1:1)';
+            for FInd = 1:length(fieldsTCCurve)
+                FieldName = fieldsTCCurve{FInd};
+                TuningCurveTrunc.(FieldName)(...
+                    (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
+                    TruncInd) = FrData1Trunc.(FieldName)(PixU,end:-1:1)';
+            end
+%             TuningCurveTrunc.C(...
+%                 (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
+%                 TruncInd) = FrData1Trunc.C(PixU,end:-1:1)';
+%             TuningCurveTrunc.S(...
+%                 (PixUseInd-1)*length(AngleList)+1:PixUseInd*length(AngleList),...
+%                 TruncInd) = FrData1Trunc.S(PixU,end:-1:1)';
         end
     end
 end

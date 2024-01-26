@@ -1,7 +1,7 @@
 %% Read drive data on HPC
 
 %% 0: make dirs
-function [] = Paper3_ReadDataDriveHPC(sampleId)
+function [] = Paper3_ReadDataDriveHPC_L6(sampleId)
 CurrentFolder = pwd
 %FigurePath = [CurrentFolder '/Figures'];
 addpath(CurrentFolder)
@@ -14,11 +14,13 @@ addpath(SaveToFolder)
 
 load('DriveWkSp_SCSepa_Cconst_Conn.mat','EcplxInd');
 
-%SIlgnMptAll = 1:0.04:1.2;
-SIlgnMptAll = 1:0.04:1.4;
+L6Intesect = 0.65;
+L6ShapeAll = [0.04, 0.07, 0.10, 0.04, 0.07, 0.10];
+L6EndAll = [1 1 1 1.05 1.05 1.05];
+
 GratingAll = 0:7.5:22.5;
 %SampleNum = 10;
-aa = length(SIlgnMptAll); bb = length(GratingAll);
+aa = length(L6ShapeAll); bb = length(GratingAll);
 
 BgFrs = zeros(aa*bb,3);
 DrvFrs = cell(aa*bb,4); %SCEI
@@ -26,9 +28,11 @@ MtpRcd = zeros(aa*bb,2);
 SmpFrac = 0.8; % sample from how much time
 dirInd = 1;
 
-for SIlgnInd = 1:aa
+
+for TestId = 1:aa
     for AngInd = 1:bb
-            SIlgnMpt = SIlgnMptAll(SIlgnInd);
+            L6Shape = L6ShapeAll(TestId);
+            L6End   = L6EndAll(TestId);
             Grating = GratingAll(AngInd);
             % Frst setup network
             N_HC = 3;
@@ -103,10 +107,10 @@ for SIlgnInd = 1:aa
             T = 10000; %dt = 0.1; 
             TPar = 10;
 
-            %% Read data
-            ReadFolder = [SaveToFolder sprintf('SIlgnMpt%.3f_Ang%.1f_sample%d/',SIlgnMpt,Grating,sampleId)];
-            MtpRcd(dirInd,1) = SIlgnMpt; MtpRcd(dirInd,2) = Grating;
-            fprintf('SIlgnMpt%.3f_Ang%.1f_sample%d\n',SIlgnMpt,Grating,sampleId)
+            %% Read dat
+            ReadFolder = [SaveToFolder sprintf('L6Int%.2fL6Sh%.2fend%.2f_Ang%.1f_sample%d/',L6Intesect,L6Shape,L6End,Grating,sampleId)];
+            MtpRcd(dirInd,1) = L6Shape; MtpRcd(dirInd,2) = Grating;
+            fprintf('L6Int%.2fL6Sh%.2fend%.2f_Ang%.1f_sample%s/',L6Intesect,L6Shape,L6End,Grating,sampleId)
             if isfolder(ReadFolder)
                 % read BG Frs
                 load([ReadFolder 'BGNWTrace.mat'],'NWTrace');
@@ -119,7 +123,8 @@ for SIlgnInd = 1:aa
                 SpE = []; SpI = [];
                 PhaseEAll = [];
                 for TSec = 1:TPar
-                    DriveFName = [sprintf('DriveWkSp_SIlgnMpt%.3f_Ang%.1f',SIlgnMpt,Grating) num2str(TSec) 's.mat'];
+                    DriveFName = [sprintf('DriveWkSp_L6Sh%.2f_Ang%.1f',L6Shape,Grating) num2str(TSec) 's.mat'];
+                    %DriveFName = [sprintf('DriveWkSp_SIlgnMpt%.3f_Ang%.1f',SIlgnMpt,Grating) num2str(TSec) 's.mat'];
                     load([ReadFolder DriveFName],'NWTrace');
 
                     SpECurrent = []; SpICurrent = [];
@@ -175,6 +180,6 @@ for SIlgnInd = 1:aa
         dirInd = dirInd+1;
     end
 end
-save([SaveToFolder sprintf('Paper3DriveNW_SIlgn_Samps%d_SIlgnMpt%.2f_%.2f.mat',...
-    sampleId,min(SIlgnMptAll),max(SIlgnMptAll))],'BgFrs','DrvFrs','MtpRcd')
+save([SaveToFolder sprintf('Paper3DriveNW_L6_Samps%d_L6Sh%.2f_%.2f_L6End%.2f_%.2f.mat',...
+    sampleId,min(L6ShapeAll),max(L6ShapeAll),min(L6EndAll),max(L6EndAll))],'BgFrs','DrvFrs','MtpRcd')
 end
