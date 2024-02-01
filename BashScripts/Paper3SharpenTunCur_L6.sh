@@ -1,5 +1,5 @@
-for L6Intesect in $(seq 0.65 0.07 0.72); do
-for L6Shape in $(seq 0.04 0.03 0.1); do
+for L6Intesect in 0.65; do
+for L6Shape in $(seq 0.12 0.02 0.2); do
 for L6End in 1; do
 for Grating in $(seq 0 7.5 22.5); do
 for SampleInd in $(seq 1 20); do
