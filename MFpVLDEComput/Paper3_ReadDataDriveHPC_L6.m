@@ -14,11 +14,9 @@ addpath(SaveToFolder)
 
 load('DriveWkSp_SCSepa_Cconst_Conn.mat','EcplxInd');
 
-%L6IntesectAll = [0.65 0.65 0.65 0.72 0.72 0.72];
-%L6ShapeAll = [0.04, 0.07, 0.10, 0.04, 0.07, 0.10];
-L6ShapeAll = 0.12:0.02:0.2;
-L6EndAll = 1*ones(size(L6ShapeAll));
-L6IntesectAll = 0.65*ones(size(L6ShapeAll));
+L6Intesect = 0.65;
+L6ShapeAll = [0.04, 0.07, 0.10, 0.04, 0.07, 0.10];
+L6EndAll = [1 1 1 1.05 1.05 1.05];
 
 GratingAll = 0:7.5:22.5;
 %SampleNum = 10;
@@ -33,7 +31,6 @@ dirInd = 1;
 
 for TestId = 1:aa
     for AngInd = 1:bb
-            L6Intesect = L6IntesectAll(TestId);
             L6Shape = L6ShapeAll(TestId);
             L6End   = L6EndAll(TestId);
             Grating = GratingAll(AngInd);
