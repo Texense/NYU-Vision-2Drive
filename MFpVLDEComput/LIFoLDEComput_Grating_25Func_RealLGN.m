@@ -34,7 +34,14 @@ if length(varargin)<1
     ExpTex = 'Linear';
 else
     L6Mapctgr = varargin{1};
-    ExpTex = 'Cosine';
+    switch L6Mapctgr
+        case 1
+            ExpTex = 'Linear';
+        case 2
+            ExpTex = 'Cosine';
+        case 3
+            ExpTex = 'Final';    
+    end
 end
 % FlagLargeDom determines the domain
 if length(varargin)<2
@@ -123,9 +130,12 @@ if L6Mapctgr == 1
     
 elseif L6Mapctgr == 2
     FL6_Angle1 = ((cosd(abs(mod(Angles_4Input,180))*2)+1)/2*(L6up-L6low)+L6low) /1e3;
-    
+elseif L6Mapctgr == 3
+    ScaledLGN = (cosd(abs(mod(Angles_4Input,180))*2)+1)/2;
+    FL6_Angle1 = (L6CurveFinalize(ScaledLGN) * (L6up-L6low)+L6low) /1e3;
 else
-    disp("illigal L6 mapping.")
+    
+    error("illigal L6 mapping.")
 end
 %% NOTE: Now we are computing for binocular, and has to mix BG and drive
 FL6_Angle1 = [FL6_Angle1, 0.007]; % background L6 frs
@@ -163,6 +173,12 @@ else
         lgn_I{angId} = sort(LGN4DataAll{end - angId + 1}.SpTimeMix);
     end
 end
+
+% drive: use REAL LGN!
+if iscell(lgn_S) 
+    disp('Drive regime. Use presimulated LGN input')
+end
+
 % Determine L4 Input from a range
 L4SE = zeros(N_HC*NPixX*N_HC*NPixY,1);
 L4SI = zeros(N_HC*NPixX*N_HC*NPixY,1);

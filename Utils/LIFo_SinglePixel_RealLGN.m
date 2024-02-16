@@ -89,7 +89,7 @@ L4Pix_EventsE = PoissonInputForNetwork(CellSim,ones(CellSim,1)/1e3,...
 
 % put all lgn_I samples together; and permute. 
 if iscell(lgn_S) % drive: use REAL LGN!
-    disp('Drive regime. Use presimulated LGN input')
+    %disp('Drive regime. Use presimulated LGN input')
     TLGNSimu = ceil(max(lgn_S{2})/1e3)*1e3; % should be 24 seconds or 24e3 ms
     Cyctime = 1e3/lgnTF;
     lgn_IAllUse = lgn_I;
