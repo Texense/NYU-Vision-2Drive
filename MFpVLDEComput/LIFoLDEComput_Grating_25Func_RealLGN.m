@@ -57,7 +57,7 @@ DataPt = 'V4D2';
 LGNStr = sprintf('LGNc%d_SF%.1f_TF%d',LGNctgr,lgnSF, lgnTF);
 L6Str  = sprintf('L6c%d_uplow%d-%d_%s',L6ctgr, L6up,L6low, ExpTex);
 FileStr = sprintf(...
-    'Paper3_LIFLib_SIlgn1.1%s_Ang%.1f_%s_%s_%s.mat',...
+    'Paper3_LIFLib_%s_Ang%.1f_%s_%s_%s.mat',...
               DataPt, Angle, LGNStr,L6Str,DomStr{FlagLargeDom})
 if isfile([SaveToFolder FileStr])
     disp('Result data file exists. exiting...')
@@ -92,7 +92,7 @@ S_EL6=S.S_EL6; S_IL6=S.S_IL6;
 S_amb=S.S_amb; rS_amb=S.rS_amb; rC_amb=S.rC_amb; rI_amb=S.rI_amb;
 S_Elgn=S.S_Elgn; 
 % CHANGING SILGN!!
-S_Ilgn=S.S_Ilgn * 1.1;
+S_Ilgn=S.S_Ilgn;% * 1.1;
 gL_E=S.gL_E; gL_I=S.gL_I; Ve=S.Ve; Vi=S.Vi;  tau_ref=S.tau_ref;
 
 tau_ampa_R=S.tau_ampa_R; tau_ampa_D=S.tau_ampa_D;
