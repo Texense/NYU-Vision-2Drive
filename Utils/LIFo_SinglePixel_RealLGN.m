@@ -163,7 +163,7 @@ for TInt = 1:TCyc
             lgn_Events(LIFId,ceil(lgnEvents{LIFId}/dt)) = 1;
         end
     elseif isnumeric(lgn_S) && length(lgn_S) == 1 % bg
-        disp('Background regime. Use Phase consistent LGN input')
+        %disp('Background regime. Use Phase consistent LGN input')
         lgnBGR = [4;6;1;2;4].*[lgn_S;lgn_S;lgn_C;lgn_C;lgn_I]; % first vec N_lgn used:S4 S6 C1 C2 I4
         lgn_Events = PoissonInputForNetwork(CellSim,lgnBGR,LIFSimuT*TimeFrac,dt,true); % lgn_Q should be per ms
     else
