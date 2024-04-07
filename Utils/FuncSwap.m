@@ -4,10 +4,9 @@
 function LDEFrfuncSOut = FuncSwap(LDEFrfuncS,mapping)
 LDEFrfuncSOut = LDEFrfuncS;
 for ii = 1:4
-    for jj = 1:4
+    for jj = 1:size(LDEFrfuncS,2)
         LDEFrfuncSOut{ii,jj} = ...
-            (LDEFrfuncS{ii,jj}           + LDEFrfuncS{mapping(2,ii),jj} + ...
-            LDEFrfuncS{ii,mapping(2,jj)} + LDEFrfuncS{mapping(2,ii),mapping(2,jj)})/4;
+            (LDEFrfuncS{ii,jj}           + LDEFrfuncS{mapping(2,ii),jj})/2;
     end
     
 end
