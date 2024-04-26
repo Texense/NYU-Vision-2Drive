@@ -45,9 +45,10 @@ if length(varargin)>5
     EKp = varargin{6}; % excitation suppresion parameters
     IKp = varargin{7};
 else
-    EKp.Thrsld = 50; EKp.Highist = [200,150]; EKp.HardBound = 200; EKp.Slope = 0;
+    %EKp.Thrsld = 50; EKp.Highist = [200,150]; EKp.HardBound = 200; EKp.Slope = 0; %%% NOT USED
     
-    IKp.Thrsld = 70; IKp.Highist = [100,95];  IKp.HardBound = 120; IKp.Slope = 0.95;
+    %IKp.Thrsld = 70; IKp.Highist = [100,95];  IKp.HardBound = 120; IKp.Slope = 0.95;
+    IKp.Thrsld = 60; IKp.Highist = 120;  IKp.Slope = 0.9; % this is for new rule: multiplicative saturation
 end
 
 LDEItr = cell(Epoc+1,1);LDEItr{1} = LDEIni;
@@ -88,13 +89,13 @@ for Epc = 1:Epoc
     LDEInpt = LDEItr{Epc};
     LDEUse = LDEInpt;
     if InhKillFlag % apply inhibition suppresion
-        LDEUse.E = LDEUse.S * (1-0.3077) + LDEUse.C * 0.3077;
-        LDEUseEAdj = InhKill(LDEUse.E, EKp.Thrsld, EKp.Highist, EKp.HardBound, EKp.Slope)./LDEUse.E;
-        LDEUse.S = LDEUse.S .* LDEUseEAdj;
-        LDEUse.C = LDEUse.C .* LDEUseEAdj;
-        
-        LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);
-        LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
+        %LDEUse.E = LDEUse.S * (1-0.3077) + LDEUse.C * 0.3077;
+        %LDEUseEAdj = InhKill(LDEUse.E, EKp.Thrsld, EKp.Highist, EKp.HardBound, EKp.Slope)./LDEUse.E;
+        %LDEUse.S = LDEUse.S .* LDEUseEAdj;
+        %LDEUse.C = LDEUse.C .* LDEUseEAdj;
+        LDEUse.I   = InhMulp(LDEUse.I, IKp);
+        %LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);
+        %LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
     end
     LDEUse.E = LDEUse.S * (1-0.3077) + LDEUse.C * 0.3077;
     % Obtain the L4E/I inputs to every pixel's (S C I) neuron
