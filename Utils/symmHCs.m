@@ -4,6 +4,8 @@
 
 % PertMode: 'add' add the Pert to one HC
 %           'prod' multiply to one HC
+% N_HCOut: now can adopt both 1 or 2 different number of HCs
+% N_HCOut = [N_HCOutX, N_HCOutY]
 function L4EUseOut = symmHCs(L4EUse,N_HCOut,NPixX,NPixY,varargin)
 if isempty(varargin)
     FlagPerturb = false;
@@ -17,16 +19,21 @@ else
     end
 end
 
+if length(N_HCOut) == 1
+    N_HCOutX = N_HCOut; N_HCOutY = N_HCOut; 
+elseif length(N_HCOut) == 2
+    N_HCOutX = N_HCOut(1); N_HCOutY = N_HCOut(2); 
+end
 
-L4EMap = reshape(L4EUse,N_HCOut*NPixY,N_HCOut*NPixX);
-[HCX, HCY] = meshgrid(1:N_HCOut,1:N_HCOut);
+L4EMap = reshape(L4EUse,N_HCOutY*NPixY,N_HCOutX*NPixX);
+[HCX, HCY] = meshgrid(1:N_HCOutX,1:N_HCOutY);
 HCX = mod(HCX,2); HCY = mod(HCY,2); 
 
 % pack all HCs together then get symmetry
-L4EUseOutAllHC = zeros(NPixY,NPixX,N_HCOut^2);
+L4EUseOutAllHC = zeros(NPixY,NPixX,N_HCOutX*N_HCOutY);
 HCid = 1;
-for xid = 1:N_HCOut
-    for yid = 1:N_HCOut
+for xid = 1:N_HCOutX
+    for yid = 1:N_HCOutY
         xmod = HCX(yid, xid); ymod = HCY(yid, xid); 
         HCOrig = L4EMap((yid-1)*NPixY+1:yid*NPixY, (xid-1)*NPixX+1:xid*NPixX);
         if xmod == 0
@@ -55,8 +62,8 @@ end
 
 % Map the HC back
 L4EUseOut = zeros(size(L4EMap));
-for xid = 1:N_HCOut
-    for yid = 1:N_HCOut
+for xid = 1:N_HCOutX
+    for yid = 1:N_HCOutY
         xmod = HCX(yid, xid); ymod = HCY(yid, xid); 
         HCHold = L4EUseOutOneHC;
         if xmod == 0
@@ -70,5 +77,5 @@ for xid = 1:N_HCOut
     end
 end
 
-L4EUseOut = reshape(L4EUseOut,N_HCOut^2*NPixX*NPixY,1);
+L4EUseOut = reshape(L4EUseOut,N_HCOutX*N_HCOutY*NPixX*NPixY,1);
 end

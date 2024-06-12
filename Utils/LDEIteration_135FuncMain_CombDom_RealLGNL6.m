@@ -160,7 +160,7 @@ for Epc = 1:Epoc
     
     
     % record the function used.
-    FuncUseAll(Epc) = FuncUse;
+    FuncUseAll(Epc) = FuncUse-1;
     
     LDENext = struct(...
         'S',LDEOut.S*p + LDEInpt.S*(1-p),...
