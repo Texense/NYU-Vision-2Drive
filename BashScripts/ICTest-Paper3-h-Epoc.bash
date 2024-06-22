@@ -14,8 +14,8 @@ module purge
 module load matlab/2022a
 
 cd /scratch/$USER/NYU-Vision-2Drive
-echo "${RadiusInd},${SampleSize},${SaveID},${StepSize}"  
-matlab -r "HPCICTest_Paper3(${RadiusInd},${SampleSize},${SaveID},${StepSize})"
+echo "${RadiusInd},${SampleSize},${SaveID},${StepSize},${EpocTest}"  
+matlab -r "HPCICTest_Paper3(${RadiusInd},${SampleSize},${SaveID},${StepSize},${EpocTest})"
 
 
 

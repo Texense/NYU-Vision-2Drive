@@ -55,7 +55,7 @@ else
 end
 DomStr = {'S','L','Ler'};
 
-L6up = 100; L6low = 3; %[10 54; 12 50]
+L6up = 120; L6low = 3; %[10 54; 12 50]
 
 DataPt = 'V4D2';
 LGNStr = sprintf('LGNc%d_SF%.1f_TF%d',LGNctgr,lgnSF, lgnTF);
@@ -138,7 +138,7 @@ elseif L6Mapctgr == 3
     ScaledLGN = (cosd(abs(mod(Angles_4Input,180))*2)+1)/2;
     FL6_Angle1 = (L6CurveFinalize(ScaledLGN) * (L6up-L6low)+L6low) /1e3;
 elseif L6Mapctgr == 4
-    FL6_Angle1 = (3:3:100) * 1e-3;
+    FL6_Angle1 = (L6low:3:L6up) * 1e-3;
 else
     
     error("illigal L6 mapping.")

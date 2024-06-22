@@ -15,6 +15,7 @@ addpath(SaveFolder)
 addpath([CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3PlotingData/'])
 
 load('ICTest_Paper3.mat')
+
 CurrentFolder = pwd
 SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3ICTestData/']; % V1D2
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/']; % V1
@@ -22,23 +23,30 @@ addpath(SaveFolder)
 %% 4.1 Test a large sample
 NSample = SampleSize;
 Radius = 10^(-RadiusInd);
+%load('LDE_CoG_h0.33_Samp6k.mat','LDE_CoG')
+%load('LDE_CoG_h0.60_Samp6k.mat','LDE_CoG');LDE_CoG_h0.60_Samp600
+load('LDE_CoG_h0.60_Samp600.mat','LDE_CoG')
+LDEequv = LDE_CoG; % Now using the CoG of 6000 samples
 
-LDEequv = LDEOutAll{1}{end};
+if length(varargin)>0
+    p = varargin{1}
+else
+    p = 0.33
+end
+
+if length(varargin)>1
+    EpocTest = varargin{2}
+else
+    EpocTest = 300
+end
 
 LDEPertOutAll = cell(NSample,1);
-EpocTest = 300;
+
 L2Diff_OneStepAll = zeros(NSample,EpocTest+1);
 DiffVecAll = zeros(NSample,EpocTest+1,NPixY*NPixX*3);
 NANFlag = false(NSample,1);
 
 N_HCOut = [N_HCOutX, N_HCOutY];
-
-if length(varargin)>0
-    p = StepSize;
-else
-    p = 0.33;
-end
-
 
 tic
 for TestInd = 1:NSample

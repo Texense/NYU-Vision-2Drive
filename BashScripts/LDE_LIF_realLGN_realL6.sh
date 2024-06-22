@@ -4,7 +4,7 @@ for Angle in 0 7.5 15 22.5; do
 for LGNctgr in $(seq 1 5); do
 for lgnTF in 10; do
 for lgnSF in 2.5; do
-for L6ctgr in $(seq 1 33); do
+for L6ctgr in $(seq 34 40); do
 for L6Mapctgr in 4; do
 for FlagLargeDom in $(seq 1 3); do
 #
@@ -16,7 +16,7 @@ case ${FlagLargeDom} in
 esac
 
 # Define the full path to the result file
-resultFile="/scratch/zx555/NYU-Vision-2Drive/Data/Paper2_NetworkTuning/Fig1V4/25Function_binocular_realLGN/Paper3_LIFLib_V4D2_Ang$(printf '%.1f' ${Angle})_LGNc${LGNctgr}_SF${lgnSF}_TF${lgnTF}_L6c${L6ctgr}_uplow100-3_CtrlL4_${X}.mat"
+resultFile="/scratch/zx555/NYU-Vision-2Drive/Data/Paper2_NetworkTuning/Fig1V4/25Function_binocular_realLGN/Paper3_LIFLib_V4D2_Ang$(printf '%.1f' ${Angle})_LGNc${LGNctgr}_SF${lgnSF}_TF${lgnTF}_L6c${L6ctgr}_uplow120-3_CtrlL4_${X}.mat"
 echo "Checking for ${resultFile}"
 if [ ! -f "${resultFile}" ]; then
     echo "File ${resultFile} not found, submitting job..."

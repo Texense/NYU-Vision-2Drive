@@ -16,15 +16,17 @@ addpath([CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3PlotingData/'])
 
 %% 4.1 Test a large sample
 NSample = SampleSize;
-% if length(varargin)>0
-%     p = StepSize;
-% else
-%     p = 0.33;
-% end
+if length(varargin)>0
+    p = varargin{1};
+    hStr = sprintf('_h%.2f',p)
+else
+    p = 0.33;
+    hStr = ''
+end
 % load([SaveFolder sprintf('Paper3LocalTest_Rad%d_size%d_ID%d_h%.2f.mat',...
 %     RadiusInd,NSample,SaveID,p)],'L2Diff_OneStepAll','DiffVecAll','LDEPertOutAll','LDEequv')
-load([SaveFolder sprintf('Paper3LocalTest_Rad%d_size%d_ID%d.mat',...
-    RadiusInd,NSample,1)],'L2Diff_OneStepAll')
+load([SaveFolder sprintf('Paper3LocalTest_Rad%d_size%d_ID%d%s.mat',...
+    RadiusInd,NSample,1,hStr)],'L2Diff_OneStepAll')
 EpocTest = size(L2Diff_OneStepAll,2)-1;
 NSampleAll = SampleSize * maxId;
 
@@ -34,11 +36,11 @@ L2Diff_AllSample = zeros(NSampleAll,EpocTest+1);
 SaveIdUsed = 0;
 for SaveId = minId:maxId
     
-    if isfile([SaveFolder sprintf('Paper3LocalTest_Rad%d_size%d_ID%d.mat',...
-            RadiusInd,NSample,SaveId)])
+    if isfile([SaveFolder sprintf('Paper3LocalTest_Rad%d_size%d_ID%d%s.mat',...
+            RadiusInd,NSample,SaveId,hStr)])
         tic
-        load([SaveFolder sprintf('Paper3LocalTest_Rad%d_size%d_ID%d.mat',...
-            RadiusInd,NSample,SaveId)],'L2Diff_OneStepAll','LDEPertOutAll')
+        load([SaveFolder sprintf('Paper3LocalTest_Rad%d_size%d_ID%d%s.mat',...
+            RadiusInd,NSample,SaveId,hStr)],'L2Diff_OneStepAll','LDEPertOutAll')
         SampleIdRange = (SaveId-1)*NSample + 1 : SaveId*NSample;
         L2Diff_AllSample(SampleIdRange,:) = L2Diff_OneStepAll;
         for SampleId = SampleIdRange
@@ -54,5 +56,5 @@ for SaveId = minId:maxId
 
     
 end
-save([SaveFolder sprintf('Paper3LocalTestAll_Rad%d_IDRange%d-%d.mat',...
-    RadiusInd,minId,maxId)],'LDEPertOutAllSample','L2Diff_AllSample','SaveIdUsed')
+save([SaveFolder sprintf('Paper3LocalTestAll_Rad%d_IDRange%d-%d%s.mat',...
+    RadiusInd,minId,maxId,hStr)],'LDEPertOutAllSample','L2Diff_AllSample','SaveIdUsed')

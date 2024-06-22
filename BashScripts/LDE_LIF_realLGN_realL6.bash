@@ -3,8 +3,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=32
-#SBATCH --time=6:00:00
-#SBATCH --mem=48GB
+#SBATCH --time=2:00:00
+#SBATCH --mem=70GB
 #SBATCH --mail-type=END
 #SBATCH --mail-user=zx555@nyu.edu
 ##SBATCH --output=%j_Run1_Panel%a.out
