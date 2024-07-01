@@ -1,32 +1,29 @@
-%% HPC for large amount of IC tests
-% RadiusInd: 10^-RadiusInd when using
-% SampleSize: specify an integer. Fix
+%% HPC for large amount of IC tests. Start from NESS
+% BlockID 1,2,5
 % SaveID Just for saving tag
-function [] = HPCICTest_Paper3(RadiusInd,SampleSize,SaveID, varargin)
+
+function [] = HPCGlobConvTest2_RAND_Paper3(BlockID, SaveID, NSample, varargin)
 CurrentFolder = pwd
+%FigurePath = [CurrentFolder '/Figures/Demo022722/'];
 addpath(CurrentFolder)
 addpath([CurrentFolder '/Utils'])
 addpath([CurrentFolder '/Data'])
-SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3ICTestData/']; % V1D2
-%SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/']; % V1
-addpath(SaveFolder)
 % DataFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/16Function_Scheme/']; % V1D2
 % addpath(DataFolder)
+addpath([CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/'])
 addpath([CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3PlotingData/'])
+DataFolder4 = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3ICTestData/'];
+addpath(DataFolder4)
 
 load('ICTest_Paper3-L4EDepression.mat')
+clear LDEFrfuncLarge LDEFrfunc
+load('LDE_CoG_h0.60_Samp600.mat','LDE_CoG')
+LDEequv = LDE_CoG;
 
 CurrentFolder = pwd
-SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3ICTestData/']; % V1D2
+SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/Paper3PlotingData_Global/']; % V1D2
 %SaveFolder = [CurrentFolder '/Data/Paper2_NetworkTuning/Fig1V4/']; % V1
 addpath(SaveFolder)
-%% 4.1 Test a large sample
-NSample = SampleSize;
-Radius = 10^(-RadiusInd);
-%load('LDE_CoG_h0.33_Samp6k.mat','LDE_CoG')
-%load('LDE_CoG_h0.60_Samp6k.mat','LDE_CoG');LDE_CoG_h0.60_Samp600
-load('LDE_CoG_h0.60_Samp600.mat','LDE_CoG')
-LDEequv = LDE_CoG; % Now using the CoG of 6000 samples
 
 if length(varargin)>0
     p = varargin{1}
@@ -39,32 +36,54 @@ if length(varargin)>1
 else
     EpocTest = 300
 end
+%% first prepare a driven IC
+LDEIC_temp.S = zeros(PixNumOut,1);
+LDEIC_temp.C = zeros(PixNumOut,1);
+LDEIC_temp.I = zeros(PixNumOut,1); 
 
+
+% Now perturbe and collect a group
+BckSzAll = [1,2,5];
+PertBckSz = BckSzAll(BlockID); % size of the block
+BlockN = floor(NPixX/PertBckSz);
+  % Use Kronecker Tensor Product
+ICTestAll = cell(NSample,1);
+
+for SampInd = 1:NSample
+    rng(SaveID*NSample + SampInd, 'twister')
+    LDEIC_pert = LDEIC_temp;
+    Block = ones(PertBckSz);
+    %PertMtx = ones(BlockN);
+    
+    EPert = 60*rand(BlockN); % random in [1,2]
+    IPert = 100*rand(BlockN) + 20; %(4*rand(BlockN)+2).* EPert; % random in [1/2,1]
+    
+    SPert = EPert/1.6;
+    CPert = SPert*3;
+    
+    %PertMtxUse = kron(PertMtx,Block);
+    % take a blockwise peerturbation
+    LDEIC_pert.S = symmHCs(LDEIC_pert.S,[N_HCOutX, N_HCOutY],NPixX,NPixY,kron(SPert,Block),'add');
+    LDEIC_pert.C = symmHCs(LDEIC_pert.C,[N_HCOutX, N_HCOutY],NPixX,NPixY,kron(CPert,Block),'add');
+    LDEIC_pert.I = symmHCs(LDEIC_pert.I,[N_HCOutX, N_HCOutY],NPixX,NPixY,kron(IPert,Block),'add');
+    
+    ICTestAll{SampInd} = LDEIC_pert;
+    
+end
+
+
+%% Simulate for each IC
 LDEPertOutAll = cell(NSample,1);
 
 L2Diff_OneStepAll = zeros(NSample,EpocTest+1);
 DiffVecAll = zeros(NSample,EpocTest+1,NPixY*NPixX*3);
 NANFlag = false(NSample,1);
 
-N_HCOut = [N_HCOutX, N_HCOutY];
+%N_HCOut = [N_HCOutX, N_HCOutY];
 
 tic
 for TestInd = 1:NSample
-    rng(TestInd + NSample*SaveID, 'twister')
-    NoiseAll = normrnd(0,Radius,NPixY*NPixX*3,NSample);
-    NoiseAll(1)
-    %NoiseUse = [];
-    NoiNorm  = sqrt(sum(NoiseAll.^2,1));
-    NoiseAll = NoiseAll./repmat(NoiNorm,NPixY*NPixX*3,1)*Radius;
-    % OutBound = (NoiNorm>1e-7) | (NoiNorm<1e-10);
-    % NoiseAll(:,OutBound) = [];
-
-    IniTest.S = symmHCs(LDEequv.S,N_HCOut,NPixX,NPixY,...
-        NoiseAll(1:NPixY*NPixX,TestInd));
-    IniTest.C = symmHCs(LDEequv.C,N_HCOut,NPixX,NPixY,...
-        NoiseAll(NPixY*NPixX+1:2*NPixY*NPixX,TestInd));
-    IniTest.I = symmHCs(LDEequv.I,N_HCOut,NPixX,NPixY,...
-        NoiseAll(2*NPixY*NPixX+1:3*NPixY*NPixX,TestInd));
+    IniTest = ICTestAll{TestInd};
     tic
     [LDEPertOutAll{TestInd},~,~,~,~,~,...
         NANFlag(TestInd)] = ...
@@ -100,10 +119,15 @@ for TestInd = 1:NSample
                 sqrt(sum((SDiff*(1-CplxR)+CDiff*CplxR).^2,'all'));%sqrt(sum([SDiff;CDiff;IDiff].^2));
             DiffVecAll(TestInd,EpcInd,:) = [SDiff;CDiff;IDiff];
         end
+        fprintf("sample %d is done.\n",TestInd)
+    else
+        fprintf("sample %d crashed.\n",TestInd)
     end
-    fprintf("sample %d is done.\n",TestInd)
+    
     toc
 end
 toc
-save([SaveFolder sprintf('Paper3LocalTest-Edep-ModiIdep_Rad%d_size%d_ID%d_h%.2f.mat',...
-    RadiusInd,NSample,SaveID,p)],'L2Diff_OneStepAll','DiffVecAll','LDEPertOutAll','LDEequv')
+save([SaveFolder sprintf('Paper3GlobConv_BlockID%d_SaveId%d_Samp%d_h%.2f.mat',...
+    BlockID,SaveID,NSample,p)],...
+    'LDEPertOutAll','L2Diff_OneStepAll','DiffVecAll')
+end

@@ -60,7 +60,7 @@ LDEoutVec(:,1) = [LDEIni.S;LDEIni.C;LDEIni.I];
 FuncUseAll = zeros(Epoc,1);
 
 % Put all f(L4E, L4I, L6) into cells of 3D matrix at first
-L6EMesh = 1:33;
+L6EMesh = 1:size(LDEFrfuncAll{1}.S,2);
 L6MeshZ = L6EMesh';%reshape(L6EMesh, [1, 1, length(L6EMesh)]);
 FuncN = length(L4EmeshXAll); % should be consistent for all three vars
 lgnN = size(PixLGNCtgr,2);
@@ -89,10 +89,10 @@ for Epc = 1:Epoc
     LDEInpt = LDEItr{Epc};
     LDEUse = LDEInpt;
     if InhKillFlag % apply inhibition suppresion
-        %LDEUse.E = LDEUse.S * (1-0.3077) + LDEUse.C * 0.3077;
-        %LDEUseEAdj = InhKill(LDEUse.E, EKp.Thrsld, EKp.Highist, EKp.HardBound, EKp.Slope)./LDEUse.E;
-        %LDEUse.S = LDEUse.S .* LDEUseEAdj;
-        %LDEUse.C = LDEUse.C .* LDEUseEAdj;
+        LDEUse.E = LDEUse.S * (1-0.3077) + LDEUse.C * 0.3077;
+        LDEUseEAdj = L6Convert(LDEUse.E,EKp)./LDEUse.E;
+        LDEUse.S = LDEUse.S .* LDEUseEAdj;
+        LDEUse.C = LDEUse.C .* LDEUseEAdj;
         LDEUse.I   = InhMulp(LDEUse.I, IKp);
         %LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);
         %LDEUse.I   = InhKill(LDEUse.I, IKp.Thrsld, IKp.Highist, IKp.HardBound, IKp.Slope);%*0.8+LDEInpt.I*0.2 % compensate for the original recursive
@@ -117,11 +117,11 @@ for Epc = 1:Epoc
     L6EUse = L6Convert(C(2:end-1, 2:end-1),L6pars);% Extract the part of L6 that corresponds to the original dimensions of B
     
     %L61*(C(2:end-1, 2:end-1)-L62); 
-    L6EUse(L6EUse>99) = 99; L6EUse(L6EUse<3) = 3; % for now, I can't handel fL6>99 Hz since I didn;t precompute that
-    % compute the L6 plane that I should refer to. 3 = layer 1; 99 = layer
-    % 33, and interpolate the rest.
+    L6EUse(L6EUse>3*length(L6EMesh)) = 3*length(L6EMesh); L6EUse(L6EUse<3) = 3; % for now, I can't handel fL6>120 Hz since I didn't precompute that
+    % compute the L6 plane that I should refer to. 3 = layer 1; 120 = layer
+    % 40, and interpolate the rest.
     L6ELibInd = L6EUse(:)/3; % should be 1-33
-    L6ELibInd(L6ELibInd<1) = 1; L6ELibInd(L6ELibInd>33) = 33; 
+    L6ELibInd(L6ELibInd<1) = 1; L6ELibInd(L6ELibInd>length(L6EMesh)) = length(L6EMesh); 
     % Choose the best option of domain: Large by defalt; if better move to
     % smalle and smaller
         
