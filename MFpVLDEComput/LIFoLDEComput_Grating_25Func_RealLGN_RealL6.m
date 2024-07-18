@@ -53,12 +53,56 @@ if length(varargin)<2
 else
     FlagLargeDom = varargin{2};
 end
+
+if length(varargin)<3 % contrast parameters 
+    C = 100;
+else
+    C = varargin{3}; %
+end
+
 DomStr = {'S','L','Ler'};
 
 L6up = 120; L6low = 3; %[10 54; 12 50]
 
 DataPt = 'V4D2';
-LGNStr = sprintf('LGNc%d_SF%.1f_TF%d',LGNctgr,lgnSF, lgnTF);
+SaveStr = 'LGN';
+LGN4DataAll = cell(13,1); LGN6DataAll = cell(13,1);
+switch C
+    case 100
+        LGNStr = sprintf('LGNc%d_SF%.1f_TF%d',LGNctgr,lgnSF, lgnTF);
+        LGN1Data = load(sprintf('LGN_Cell1_Row0.12_Col0.15_deg0.0_SF%.1f_TF%d_TSimu25.mat',...
+            lgnSF, lgnTF),'SpTimeMix'); % 1-cell config doesn't care about orientation
+        LGN2Data = load(sprintf('LGN_Cell2_Row0.12_Col0.15_deg90.0_SF%.1f_TF%d_TSimu25.mat',...
+            lgnSF, lgnTF),'SpTimeMix'); % 2-cell for C only; ortho
+
+        AngAll = 0:7.5:90; % all simulated LGN angles
+        for AngId = 1:length(AngAll)
+            LGN4DataAll{AngId} = load(sprintf('LGN_Cell4_Row0.14_Col0.15_deg%.1f_SF%.1f_TF%d_TSimu25.mat',...
+                AngAll(AngId),lgnSF, lgnTF),'SpTimeMix');
+            % For 4-cell, rowdist is 0.14
+            LGN6DataAll{AngId} = load(sprintf('LGN_Cell6_Row0.12_Col0.15_deg%.1f_SF%.1f_TF%d_TSimu25.mat',...
+                AngAll(AngId),lgnSF, lgnTF),'SpTimeMix');
+            % For 6-cell, rowdist is 0.12
+        end
+    otherwise
+        LGNStr = sprintf('LGNc%d_SF%.1f_TF%d_Contr%d',LGNctgr,lgnSF, lgnTF, C);
+        LGN1Data = load(sprintf('LGN_Contr%d_Cell1_Row0.12_Col0.15_deg0.0_SF%.1f_TF%d_TSimu25.mat',...
+            C, lgnSF, lgnTF),'SpTimeMix'); % 1-cell config doesn't care about orientation
+        LGN2Data = load(sprintf('LGN_Contr%d_Cell2_Row0.12_Col0.15_deg90.0_SF%.1f_TF%d_TSimu25.mat',...
+            C, lgnSF, lgnTF),'SpTimeMix'); % 2-cell for C only; ortho
+
+        AngAll = 0:7.5:90; % all simulated LGN angles
+        for AngId = 1:length(AngAll)
+            LGN4DataAll{AngId} = load(sprintf('LGN_Contr%d_Cell4_Row0.14_Col0.15_deg%.1f_SF%.1f_TF%d_TSimu25.mat',...
+                C,AngAll(AngId),lgnSF, lgnTF),'SpTimeMix');
+            % For 4-cell, rowdist is 0.14
+            LGN6DataAll{AngId} = load(sprintf('LGN_Contr%d_Cell6_Row0.12_Col0.15_deg%.1f_SF%.1f_TF%d_TSimu25.mat',...
+                C,AngAll(AngId),lgnSF, lgnTF),'SpTimeMix');
+            % For 6-cell, rowdist is 0.12
+        end
+end
+
+%% Load LGN spiking data!
 L6Str  = sprintf('L6c%d_uplow%d-%d_%s',L6ctgr, L6up,L6low, ExpTex);
 FileStr = sprintf(...
     'Paper3_LIFLib_%s_Ang%.1f_%s_%s_%s.mat',...
@@ -106,21 +150,6 @@ rhoE_ampa=S.rhoE_ampa; rhoE_nmda=S.rhoE_nmda;
 rhoI_ampa=S.rhoI_ampa; rhoI_nmda=S.rhoI_nmda;
 %LGNFreq = S.LGNFreq;
 clear S
-%% Load LGN spiking data!
-LGN1Data = load(sprintf('LGN_Cell1_Row0.12_Col0.15_deg0.0_SF%.1f_TF%d_TSimu25.mat',...
-                        lgnSF, lgnTF),'SpTimeMix'); % 1-cell config doesn't care about orientation
-LGN2Data = load(sprintf('LGN_Cell2_Row0.12_Col0.15_deg90.0_SF%.1f_TF%d_TSimu25.mat',...
-                        lgnSF, lgnTF),'SpTimeMix'); % 2-cell for C only; ortho
-LGN4DataAll = cell(13,1); LGN6DataAll = cell(13,1);
-AngAll = 0:7.5:90; % all simulated LGN angles
-for AngId = 1:length(AngAll)
-    LGN4DataAll{AngId} = load(sprintf('LGN_Cell4_Row0.14_Col0.15_deg%.1f_SF%.1f_TF%d_TSimu25.mat',...
-                                       AngAll(AngId),lgnSF, lgnTF),'SpTimeMix');
-    % For 4-cell, rowdist is 0.14
-    LGN6DataAll{AngId} = load(sprintf('LGN_Cell6_Row0.12_Col0.15_deg%.1f_SF%.1f_TF%d_TSimu25.mat',...
-                                       AngAll(AngId),lgnSF, lgnTF),'SpTimeMix');  
-    % For 6-cell, rowdist is 0.12
-end
 
 %% Prepare for a canonical pixel
 Angles_4Input = Angle + [0 45 90 135];

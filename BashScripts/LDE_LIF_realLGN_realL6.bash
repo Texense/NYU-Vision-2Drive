@@ -17,7 +17,7 @@ export MATLAB_LOG_DIR=$SLURM_JOBTMP
 cp -rp /share/apps/matlab-slurm/20240326/slurm/shared/parallel.mlsettings $MATLAB_PREFDIR
 
 cd /scratch/$USER/NYU-Vision-2Drive
-echo "${Angle},${LGNctgr},${L6ctgr},${lgnTF},${lgnSF},${L6Mapctgr},${FlagLargeDom}"  
-matlab -r "LIFoLDEComput_Grating_25Func_RealLGN_RealL6(${Angle},${LGNctgr},${L6ctgr},${lgnTF},${lgnSF},${L6Mapctgr},${FlagLargeDom})"
+echo "${C},{Angle},${LGNctgr},${L6ctgr},${lgnTF},${lgnSF},${L6Mapctgr},${FlagLargeDom}"  
+matlab -r "LIFoLDEComput_Grating_25Func_RealLGN_RealL6(${Angle},${LGNctgr},${L6ctgr},${lgnTF},${lgnSF},${L6Mapctgr},${FlagLargeDom},${C})"
 
 

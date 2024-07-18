@@ -2,7 +2,8 @@
 ## L6Mapctgr should be 2 if we want cos L6, 3 for finalized L6-LGN
 for Angle   in 0 7.5 15 22.5; do
 for LGNctgr in $(seq 1 5); do
-for lgnTF in 10; do
+for lgnTF in 2 4 16 24; do
+## it was lgnTF = 10
 for lgnSF in 2.5; do
 for L6ctgr  in $(seq 1 5); do
 for L6Mapctgr in 3; do
