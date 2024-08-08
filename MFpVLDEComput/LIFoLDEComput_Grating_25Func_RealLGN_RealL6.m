@@ -55,9 +55,9 @@ else
 end
 
 if length(varargin)<3 % contrast parameters 
-    C = 100;
+    C = 100
 else
-    C = varargin{3}; %
+    C = varargin{3} %
 end
 
 DomStr = {'S','L','Ler'};

@@ -3,6 +3,7 @@
 for C in 66; do
 ## C: 19 42 66 100; 100 is the full contrast and already exists
 for Angle in 0 7.5 15 22.5; do
+## Angle: 0 7.5 15 22.5
 for LGNctgr in $(seq 1 5); do
 for lgnTF in 10; do
 ## lgnTF was 10 should be 2 4 10 16 24
