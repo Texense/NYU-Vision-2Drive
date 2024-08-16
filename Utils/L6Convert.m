@@ -59,6 +59,23 @@ elseif iscell(L6pars{end}) % using cell in the last entry to modify the low part
     quadratic_func = @(x) coeffs(1)*x.^2 + coeffs(2)*x + coeffs(3);
     IdLow = y <= Y(end);
     y(IdLow) = quadratic_func(x(IdLow));
+    % quadratic for high end as well
+    if length(Lowpars) == 4
+        Xhigh = Lowpars{3}; % three x points: threshold (on the line), two points above
+        Yhigh = [L6pars{1}*(Xhigh(1)-L6pars{2}), Lowpars{4}]; %two points:
+
+        B = [Xhigh(1)^2, Xhigh(1), 1;
+            Xhigh(2)^2, Xhigh(2), 1;
+            Xhigh(3)^2, Xhigh(3), 1];
+
+        coeffshigh = B \ Yhigh';
+
+        % Define the quadratic function
+        quadratic_func_high = @(x) coeffshigh(1)*x.^2 + coeffshigh(2)*x + coeffshigh(3);
+        Idhigh = y >= Yhigh(1);
+        y(Idhigh) = quadratic_func_high(x(Idhigh));
+    end
+
 %% one more twick to get better Contrast response
     if iscell(Lowpars{end}) 
         ConTreakPar = Lowpars{end};
