@@ -25,7 +25,8 @@ end
 hold on
 XHc = floor(XPix/PixNum); YHc = floor(YPix/PixNum);
 
-grayColor = [.7 .7 .7];
+%grayColor = [.7 .7 .7];
+grayColor = [0 0 0];
 if XHc>1
 for VerInd = 1:XHc -1
     plot(ones(length(0:YPix))*(VerInd*PixNum+0.5),0:YPix,'Color',grayColor,'LineWidth',1.5)
